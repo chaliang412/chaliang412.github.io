@@ -5,8 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的学术主页</title>
     <!-- MathJax配置 -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- 替换原有的MathJax加载方式 -->
+<script>
+window.MathJax = {
+  loader: {load: ['input/tex', 'output/chtml']},
+  options: {
+    enableMenu: false,
+    renderActions: {
+      addMenu: []
+    }
+  },
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']]
+  },
+  startup: {
+    typeset: false,
+    pageReady: () => {
+      MathJax.startup.defaultPageReady();
+      // 延迟渲染可见区域的公式
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            MathJax.typeset([entry.target]);
+            observer.unobserve(entry.target);
+          }
+        });
+      }, {threshold: 0.1});
+      
+      document.querySelectorAll('.math-container').forEach(el => {
+        observer.observe(el);
+      });
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -523,3 +556,4 @@
     </script>
 </body>
 </html>
+
