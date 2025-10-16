@@ -5,8 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的学术主页</title>
     <!-- MathJax配置 -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- 替换现有的MathJax配置 -->
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    renderActions: {
+      addMenu: [0, '', '']
+    }
+  },
+  startup: {
+    typeset: false
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -283,6 +303,7 @@
             .skill-bar {
                 width: 100%;
             }
+        }
             .avatar-container {
                 text-align: center;
                 margin-bottom: 20px;
@@ -301,7 +322,6 @@
             .avatar:hover {
                 transform: scale(1.05);
             }
-        }
     </style>
 </head>
 <body>
@@ -532,3 +552,4 @@
     </script>
 </body>
 </html>
+
