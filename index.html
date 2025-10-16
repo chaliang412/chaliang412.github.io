@@ -29,15 +29,6 @@ window.MathJax = {
       overflow-x: auto;
       max-width: 100%; /* 限制最大宽度为父容器宽度 */
     }
-    
-    /* 针对块级公式的增强控制（可选） */
-    mjx-container(style*="display: block;") {
-      overflow-x: auto;
-      overflow-y: hidden;
-    }
-    mjx-container > svg {
-      display: inline-block;
-    }
       :root {
         --bg-color: #ffffff;
         --text-color: #333333;
@@ -294,13 +285,137 @@ window.MathJax = {
       .avatar:hover {
         transform: scale(1.05);
       }
+      .simple-contact {
+            font-family: 'Arial', sans-serif;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px;
+            background-color: white;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .contact-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            font-size: 16px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-text {
+            color: #444;
+            font-size: 14px;
+            word-break: break-all;
+            transition: all 0.3s ease;
+        }
+        
+        .contact-link {
+            color: #3498db;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        /* 悬停效果 */
+        .contact-line:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background-color: #f0f8ff;
+        }
+        
+        .contact-line:hover .contact-icon {
+            transform: scale(1.2);
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .contact-line:hover .contact-text {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+        
+        .contact-link:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        /* 平板设备响应式设计 */
+        @media (max-width: 768px) {
+            .simple-contact {
+                max-width: 350px;
+                padding: 12px;
+            }
+            
+            .contact-title {
+                font-size: 16px;
+            }
+            
+            .contact-text {
+                font-size: 13px;
+            }
+        }
+
+        /* 手机设备响应式设计 */
+        @media (max-width: 480px) {
+            .simple-contact {
+                max-width: 90%;
+                margin: 10px auto;
+                padding: 10px;
+            }
+            
+            .contact-line {
+                flex-direction: row;
+                padding: 10px;
+            }
+            
+            .contact-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 14px;
+            }
+            
+            .contact-text {
+                font-size: 12px;
+            }
+        }
+
+        /* 超小屏幕手机响应式设计 */
+        @media (max-width: 320px) {
+            .simple-contact {
+                border-radius: 5px;
+            }
+            
+            .contact-line {
+                padding: 8px 5px;
+            }
+        }
     </style>
   </head>
   <body>
     <!-- 导航栏 -->
     <nav class="navbar">
       <div class="nav-container">
-        <a href="#" class="nav-logo">我的主页</a>
+        <a href="#" class="nav-logo">『茶凉凉凉凉丶』的主页</a>
         <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
         <ul class="nav-menu" id="navMenu">
           <li class="nav-item"><a href="#about" class="nav-link">关于我</a></li>
@@ -327,27 +442,7 @@ window.MathJax = {
         <div class="avatar-container">
           <img src="images/星尘.webp" alt="我的头像" class="avatar" />
         </div>
-        <p>大家好，我是一个人。</p>
-
-        <h3>技能</h3>
-        <div class="skill-container">
-          <span class="skill-name">机器学习</span>
-          <div class="skill-bar">
-            <div class="skill-level" style="width: 90%"></div>
-          </div>
-        </div>
-        <div class="skill-container">
-          <span class="skill-name">Python</span>
-          <div class="skill-bar">
-            <div class="skill-level" style="width: 85%"></div>
-          </div>
-        </div>
-        <div class="skill-container">
-          <span class="skill-name">数学建模</span>
-          <div class="skill-bar">
-            <div class="skill-level" style="width: 95%"></div>
-          </div>
-        </div>
+        <p>大家好，我是『茶凉凉凉凉丶』，你可以简称我为『茶凉』或者『凉茶』，是一位数学/物理学爱好者，很高兴见到你！也希望我的作品可以给你带来帮助！</p>
       </section>
 
       <!-- 研究方向 -->
@@ -373,36 +468,57 @@ window.MathJax = {
 
       <!-- 项目 -->
       <section id="projects" class="card">
-        <h2 class="card-title">项目</h2>
+        <h2 class="card-title">业余爱好</h2>
         <div class="project">
-          <h3>基于深度学习的图像分类系统</h3>
-          <p>开发了一个使用卷积神经网络(CNN)的图像分类系统，准确率达到95%。</p>
-          <p>使用的模型架构：</p>
-          <p>
-            \[ f(x) = \text{softmax}(W_2 \text{ReLU}(W_1 \text{Conv}(x) + b_1) +
-            b_2) \]
-          </p>
-        </div>
-        <div class="project">
-          <h3>数学优化算法研究</h3>
-          <p>研究了一种新的随机梯度下降变体，收敛速度比传统方法快30%。</p>
+          <ol>
+          <li>
+           中文VOCALOID，如乐(yuè)正绫与星尘
+          </li>
+          单机游戏，如Galgame
+          <li>
+             观看虚拟主播，如绊爱
+        </ol>
+
         </div>
       </section>
 
       <!-- 发表论文 -->
       <section id="publications" class="card">
-        <h2 class="card-title">发表论文</h2>
+        <h2 class="card-title">掌握的技能</h2>
         <ul>
           <li>
-           没有哦
+           $\LaTeX$
           </li>
+          Mathematica
           <li>
-            没有哦
+            MATLAB
           </li>
+          Python
         </ul>
       </section>
 
-
+      <section id="contract" class="card">
+      <div class="simple-contact">
+        <div class="contact-title">联系我</div>
+        
+        <div class="contact-line">
+            <div class="contact-icon">📱</div>
+            <div class="contact-text">QQ: 3339829816</div>
+        </div>
+        
+        <div class="contact-line">
+            <div class="contact-icon">✉️</div>
+            <div class="contact-text">邮箱: yuezhengaoe@foxmail.com</div>
+        </div>
+        
+        <div class="contact-line">
+            <div class="contact-icon">📖</div>
+            <div class="contact-text">
+                知乎: <a href="https://www.zhihu.com/people/onlybai-cai" class="contact-link" target="_blank">我的知乎主页</a>
+            </div>
+        </div>
+    </div>
+</section>
     <!-- 夜间模式切换按钮 -->
     <div class="toggle-container">
       <button id="darkModeToggle" class="toggle-btn">
