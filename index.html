@@ -23,6 +23,25 @@ window.MathJax = {
 <!-- 使用defer加载，确保顺序且不阻塞 -->
 <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
     <style>
+    /* 定义字体 */
+        @font-face {
+            font-family: 'LXGW WenKai';
+            src: url('/fonts/LXGWWenKai-Regular.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        /* 全局应用字体 */
+        body {
+            font-family: 'LXGW WenKai', -apple-system, sans-serif;
+            line-height: 1.6;
+        }
+        
+        /* 确保所有元素继承字体设置 */
+        * {
+            font-family: inherit;
+        }
       mjx-container {
       display: inline-block;
       margin: auto 2px -2px;
