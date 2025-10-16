@@ -6,26 +6,22 @@
     <title>我的主页</title>
     <!-- MathJax配置 -->
     <script>
-      window.MathJax = {
-        tex: {
-          inlineMath: [
-            ["$", "$"],
-            ["\\(", "\\)"],
-          ],
-          displayMath: [
-            ["$$", "$$"],
-            ["\\[", "\\]"],
-          ],
-        },
-        startup: {
-          typeset: false,
-        },
-      };
-    </script>
-    <script
-      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
-      async
-    ></script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: {
+    fontCache: 'global'
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+  }
+  // 删除startup.typeset: false，默认自动渲染
+};
+</script>
+<!-- 使用defer加载，确保顺序且不阻塞 -->
+<script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
     <style>
       :root {
         --bg-color: #ffffff;
@@ -558,4 +554,5 @@
     </script>
   </body>
 </html>
+
 
