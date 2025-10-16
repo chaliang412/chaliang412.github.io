@@ -27,8 +27,94 @@
 <script>
   hljs.highlightAll();
 </script>
+
+<style>
+    :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --primary-color: #4a6fa5;
+            --secondary-color: #f8f9fa;
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --text-color: #f8f9fa;
+            --primary-color: #6c8fc7;
+            --secondary-color: #2d2d2d;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--primary-color);
+        }
+
+        .card {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+        }
+
+        .toggle-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-btn:hover {
+            opacity: 0.9;
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+        }
+</style>
 </head>
 <body>
+    <div class="toggle-container">
+        <button id="darkModeToggle" class="toggle-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 2V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 20V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4.92993 4.92993L6.33999 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M17.6599 17.6599L19.0699 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M6.33999 17.6599L4.92993 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19.0699 4.92993L17.6599 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            夜间模式
+        </button>
+    </div>
     <h1>你好，世界！</h1>
     <p>欢迎来到我的第一个个人网站。这里是使用 GitHub Pages 搭建的。</p>
     <h1>数学公式示例</h1>
@@ -44,17 +130,48 @@
     <p>积分公式：</p>
     $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
 
-    <pre><code class="language-javascript">
 
-</code></pre>
 
-    <p>在 JavaScript 中，使用 <code>console.log()</code> 来输出信息。</p>
-<p>HTML 标签如 <code>&lt;div&gt;</code> 用于创建容器。</p>
-    <pre><code class="language-java">
-// JavaScript 代码
-const numbers = [1, 2, 3, 4, 5];
-const squares = numbers.map(x => x * x);
-console.log(squares);
-    </code></pre>
+    <script>
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        // 检查本地存储中的模式设置
+        const currentTheme = localStorage.getItem('theme');
+        
+        // 根据系统偏好或本地存储设置初始模式
+        if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
+            document.body.classList.add('dark-mode');
+            updateButtonText(true);
+        }
+        
+        // 切换夜间模式
+        darkModeToggle.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateButtonText(isDark);
+        });
+        
+        // 更新按钮文本
+        function updateButtonText(isDark) {
+            darkModeToggle.innerHTML = isDark 
+                ? `<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   </svg>
+                   日间模式`
+                : `<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 2V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 20V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M4.92993 4.92993L6.33999 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M17.6599 17.6599L19.0699 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M20 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.33999 17.6599L4.92993 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19.0699 4.92993L17.6599 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   </svg>
+                   夜间模式`;
+        }
+    </script>
 </body>
 </html>
