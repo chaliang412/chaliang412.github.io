@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的学术主页</title>
-    
-    <!-- 预加载关键资源 -->
-    <link rel="preload" href="avatar.webp" as="image">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    
-    <!-- 内联关键CSS -->
+    <!-- MathJax配置 -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -44,26 +41,6 @@
             padding: 20px;
         }
 
-        /* 头像样式 */
-        .avatar-container {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--primary-color);
-            box-shadow: 0 4px 8px var(--card-shadow);
-            transition: transform 0.3s;
-        }
-
-        .avatar:hover {
-            transform: scale(1.05);
-        }
-
         /* 导航栏样式 */
         .navbar {
             background-color: var(--nav-bg);
@@ -74,23 +51,258 @@
             box-shadow: 0 2px 5px var(--card-shadow);
         }
 
-        /* 其他样式保持不变... */
-        /* [原有所有CSS样式保留在此] */
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            margin-left: 20px;
+        }
+
+        .nav-link {
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background-color: var(--secondary-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px var(--card-shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px var(--card-shadow);
+        }
+
+        .card-title {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        /* 技能图表 */
+        .skill-container {
+            margin-bottom: 15px;
+        }
+
+        .skill-name {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+
+        .skill-bar {
+            display: inline-block;
+            height: 10px;
+            background-color: #ddd;
+            border-radius: 5px;
+            width: calc(100% - 130px);
+            overflow: hidden;
+        }
+
+        .skill-level {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+        }
+
+        /* 联系表单 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+        }
+
+        .form-submit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .form-submit:hover {
+            background-color: #3a5a8a;
+        }
+
+        /* 夜间模式切换 */
+        .toggle-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toggle-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn:hover {
+            opacity: 0.9;
+        }
+
+        .icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 1000;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            background-color: #3a5a8a;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .avatar {
+                width: 120px;
+                height: 120px;
+            }
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background-color: var(--nav-bg);
+                padding: 20px;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-item {
+                margin: 10px 0;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .skill-name {
+                display: block;
+                width: 100%;
+                margin-bottom: 5px;
+            }
+
+            .skill-bar {
+                width: 100%;
+            }
+            .avatar-container {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .avatar {
+                width: 150px;
+                height: 150px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid var(--primary-color);
+                box-shadow: 0 4px 8px var(--card-shadow);
+                transition: transform 0.3s;
+            }
+            
+            .avatar:hover {
+                transform: scale(1.05);
+            }
+        }
     </style>
-    
-    <!-- 非关键CSS异步加载 -->
-    <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
-    
-    <!-- 优化后的MathJax配置 -->
-    <script>
-    window.MathJax = {
-      loader: {load: ['input/tex', 'output/chtml']},
-      options: {enableMenu: false},
-      tex: {inlineMath: [['$', '$']]},
-      startup: {typeset: false}
-    };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
 </head>
 <body>
     <!-- 导航栏 -->
@@ -113,19 +325,106 @@
         <section id="about" class="card">
             <h2 class="card-title">关于我</h2>
             <div class="avatar-container">
-                <img src="images/星尘.jpg" 
-                     data-src="avatar.webp" 
-                     alt="我的头像"
-                     class="lazy-load"
-                     width="150" height="150">
+                <img src="images/星尘.jpg" alt="我的头像" class="avatar">
             </div>
-            <p>我是XXX，一名专注于应用数学和机器学习的研究员...</p>
+            <p>我是XXX，一名专注于应用数学和机器学习的研究员。我的研究兴趣包括...</p>
             
-            <!-- [原有关于我部分内容保留] -->
+            <h3>教育背景</h3>
+            <ul>
+                <li>XX大学，博士学位，应用数学，2020-2025</li>
+                <li>XX大学，硕士学位，计算机科学，2017-2020</li>
+            </ul>
+            
+            <h3>技能</h3>
+            <div class="skill-container">
+                <span class="skill-name">机器学习</span>
+                <div class="skill-bar"><div class="skill-level" style="width: 90%;"></div></div>
+            </div>
+            <div class="skill-container">
+                <span class="skill-name">Python</span>
+                <div class="skill-bar"><div class="skill-level" style="width: 85%;"></div></div>
+            </div>
+            <div class="skill-container">
+                <span class="skill-name">数学建模</span>
+                <div class="skill-bar"><div class="skill-level" style="width: 95%;"></div></div>
+            </div>
         </section>
 
-        <!-- [其他部分保持不变...] -->
-        <!-- [原有所有HTML内容保留在此] -->
+        <!-- 研究方向 -->
+        <section id="research" class="card">
+            <h2 class="card-title">研究方向</h2>
+            <p>我的主要研究方向包括深度学习理论、优化算法和数学建模。以下是一些我正在研究的数学公式：</p>
+            
+            <p>神经网络的前向传播公式：</p>
+            <p>\[
+            z^{(l)} = W^{(l)}a^{(l-1)} + b^{(l)}
+            \]</p>
+            <p>\[
+            a^{(l)} = \sigma(z^{(l)})
+            \]</p>
+            
+            <p>损失函数的梯度下降更新规则：</p>
+            <p>\[
+            \theta_{t+1} = \theta_t - \eta \nabla_\theta J(\theta_t)
+            \]</p>
+            
+            <p>我正在研究的优化问题：</p>
+            <p>\[
+            \min_{x \in \mathbb{R}^n} f(x) \quad \text{s.t.} \quad g_i(x) \leq 0, i = 1, \ldots, m
+            \]</p>
+        </section>
+
+        <!-- 项目 -->
+        <section id="projects" class="card">
+            <h2 class="card-title">项目</h2>
+            <div class="project">
+                <h3>基于深度学习的图像分类系统</h3>
+                <p>开发了一个使用卷积神经网络(CNN)的图像分类系统，准确率达到95%。</p>
+                <p>使用的模型架构：</p>
+                <p>\[
+                f(x) = \text{softmax}(W_2 \text{ReLU}(W_1 \text{Conv}(x) + b_1) + b_2)
+                \]</p>
+            </div>
+            <div class="project">
+                <h3>数学优化算法研究</h3>
+                <p>研究了一种新的随机梯度下降变体，收敛速度比传统方法快30%。</p>
+            </div>
+        </section>
+
+        <!-- 发表论文 -->
+        <section id="publications" class="card">
+            <h2 class="card-title">发表论文</h2>
+            <ul>
+                <li>Smith, J., <strong>Your Name</strong>, et al. (2023). "A Novel Approach to Deep Learning Optimization". Journal of Machine Learning Research.</li>
+                <li><strong>Your Name</strong>, Johnson, A. (2022). "Mathematical Foundations of Neural Networks". Mathematics Journal.</li>
+            </ul>
+        </section>
+
+        <!-- 联系我 -->
+        <section id="contact" class="card">
+            <h2 class="card-title">联系我</h2>
+            <form id="contactForm" class="contact-form">
+                <div class="form-group">
+                    <label for="name" class="form-label">姓名</label>
+                    <input type="text" id="name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="email" class="form-label">邮箱</label>
+                    <input type="email" id="email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="message" class="form-label">消息</label>
+                    <textarea id="message" class="form-input form-textarea" required></textarea>
+                </div>
+                <button type="submit" class="form-submit">发送消息</button>
+            </form>
+            <div class="social-links">
+                <p>也可以通过以下方式联系我：</p>
+                <a href="mailto:your.email@example.com" class="nav-link">邮箱</a>
+                <a href="https://github.com/yourusername" class="nav-link">GitHub</a>
+                <a href="https://linkedin.com/in/yourprofile" class="nav-link">LinkedIn</a>
+            </div>
+        </section>
     </div>
 
     <!-- 夜间模式切换按钮 -->
@@ -154,41 +453,81 @@
     </button>
 
     <script>
-        // 图片懒加载
-        document.addEventListener("DOMContentLoaded", function() {
-            const lazyImages = [].slice.call(document.querySelectorAll("img.lazy-load"));
-            
-            if ("IntersectionObserver" in window) {
-                let lazyImageObserver = new IntersectionObserver(function(entries) {
-                    entries.forEach(function(entry) {
-                        if (entry.isIntersecting) {
-                            let lazyImage = entry.target;
-                            lazyImage.src = lazyImage.dataset.src;
-                            lazyImage.classList.remove("lazy-load");
-                            lazyImageObserver.unobserve(lazyImage);
-                        }
-                    });
-                });
-                
-                lazyImages.forEach(function(lazyImage) {
-                    lazyImageObserver.observe(lazyImage);
-                });
-            }
-            
-            // 数学公式延迟渲染
-            const mathElements = document.querySelectorAll('.lazy-render');
-            const mathObserver = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && window.MathJax) {
-                        MathJax.typeset([entry.target]);
-                        mathObserver.unobserve(entry.target);
-                    }
-                });
-            }, {threshold: 0.1});
-            
-            mathElements.forEach(el => mathObserver.observe(el));
+        // 移动菜单切换
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const navMenu = document.getElementById('navMenu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            navMenu.classList.toggle('active');
+        });
 
-            // [原有JavaScript功能保留在此]
+        // 夜间模式切换
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const currentTheme = localStorage.getItem('theme');
+        
+        if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
+            document.body.classList.add('dark-mode');
+            updateButtonText(true);
+        }
+        
+        darkModeToggle.addEventListener('click', () => {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateButtonText(isDark);
+        });
+        
+        function updateButtonText(isDark) {
+            darkModeToggle.innerHTML = isDark 
+                ? `<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   </svg>
+                   日间模式`
+                : `<svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 2V4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 20V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M4.92993 4.92993L6.33999 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M17.6599 17.6599L19.0699 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M2 12H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M20 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M6.33999 17.6599L4.92993 19.0699" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M19.0699 4.92993L17.6599 6.33999" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                   </svg>
+                   夜间模式`;
+        }
+
+        // 返回顶部按钮
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', function() {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        });
+
+        backToTopButton.addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 联系表单处理
+        const contactForm = document.getElementById('contactForm');
+        
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // 这里可以添加表单提交逻辑，如发送到服务器
+            console.log('表单提交:', { name, email, message });
+            alert('感谢您的留言！我会尽快回复您。');
+            contactForm.reset();
         });
     </script>
 </body>
