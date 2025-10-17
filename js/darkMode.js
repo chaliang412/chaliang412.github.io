@@ -1,4 +1,4 @@
-/ 夜间模式切换
+
       const darkModeToggle = document.getElementById("darkModeToggle");
       const prefersDarkScheme = window.matchMedia(
         "(prefers-color-scheme: dark)"
