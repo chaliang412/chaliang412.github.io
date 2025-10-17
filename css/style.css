@@ -38,29 +38,25 @@ mjx-container {
   line-height: 1.2 !important; /* 固定行高 */
 }
 
-/* 行内公式的特殊处理 */
+/* 针对行内公式的垂直对齐修复 */
 mjx-container[jax="SVG"][display="false"] {
-  overflow: visible !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  vertical-align: middle !important; /* 行内公式使用中间对齐 */
+  display: inline-block !important;
+  vertical-align: -0.35ex !important; /* 微调此值以适应你的字体 */
+  line-height: 1 !important;
+  margin: 0 !important; /* 清除可能影响定位的边距 */
 }
 
-/* SVG 内容样式调整 */
+/* 确保 SVG 内容本身对齐正确 */
 mjx-container[jax="SVG"] mjx-svg {
-  overflow: visible !important;
-  display: inline-block;
-  vertical-align: middle !important;
+  vertical-align: middle !important; /* 或尝试 baseline */
 }
 
-/* 针对显示公式（独行公式） */
+/* 可选：调整显示公式（独行公式）的间距，确保不影响行内公式 */
 mjx-container[jax="SVG"][display="true"] {
   display: block !important;
   text-align: center;
   margin: 1em 0 !important;
-  vertical-align: baseline !important;
 }
-
 /* 完全隐藏辅助元素 */
 mjx-assistive-mml {
   display: none !important;
