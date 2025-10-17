@@ -27,19 +27,34 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
       
-      /* 1. 修复 mjx-container：禁用垂直滚动，避免竖直滚动条 */
+      /* 修复 MathJax 容器滚动条问题 */
 mjx-container {
   display: inline-block;
   margin: auto 2px -2px;
-  overflow-x: auto; /* 保留水平滚动（长公式时有用） */
-  overflow-y: hidden !important; /* 关键：强制隐藏垂直滚动条 */
+  overflow-x: auto;
+  overflow-y: hidden !important;
   max-width: 100%;
-  vertical-align: middle; /* 可选：优化公式与文字的垂直对齐 */
+  vertical-align: middle;
+  line-height: normal !important; /* 关键：重置行高 */
 }
 
-/* 2. 隐藏 MathJax 辅助元素，避免其影响高度计算 */
-mjx-assistive-mml {
-  display: none !important; /* 完全隐藏辅助元素，不影响布局 */
+/* 针对行内公式的特殊处理 */
+mjx-container[jax="SVG"][display="false"] {
+  overflow: visible !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+/* SVG 内容样式调整 */
+mjx-container[jax="SVG"] mjx-svg {
+  overflow: visible !important;
+}
+
+/* 完全隐藏辅助元素 */
+.MathJax_SVG_Processing, mjx-assistive-mml {
+  display: none !important;
+  position: absolute !important;
+  left: -10000px !important;
 }
       :root {
         --bg-color: #ffffff;
