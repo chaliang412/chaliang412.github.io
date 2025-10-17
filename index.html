@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>我的主页</title>
+        <!-- 引入外部CSS文件 -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- 预加载音频 -->
+    <link rel="preload" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3.mp3" as="audio" type="audio/mpeg">
+    <link rel="prefetch" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3.mp3">
+</head>
     <!-- MathJax配置 -->
     <script>
 window.MathJax = {
@@ -22,8 +28,6 @@ window.MathJax = {
 </script>
 <!-- 使用defer加载，确保顺序且不阻塞 -->
 <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
-    <!-- 引入外部CSS文件 -->
-    <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
     <!-- 音频播放器 -->
@@ -361,6 +365,7 @@ window.MathJax = {
     </script>
   </body>
 </html>
+
 
 
 
