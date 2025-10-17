@@ -6,9 +6,12 @@
     <title>我的主页</title>
         <!-- 引入外部CSS文件 -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- 预加载音频 -->
-    <link rel="preload" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3" as="audio" type="audio/mpeg">
-</head>
+       <!-- 音频元素：添加preload="auto"实现预加载 -->
+    <audio id="bgm" src="music/bgm.mp3" autoplay muted loop preload="auto">
+        您的浏览器不支持audio标签，请升级浏览器
+    </audio>
+    <button id="musicBtn">播放音乐</button>
+    
     <!-- MathJax配置 -->
     <script>
 window.MathJax = {
@@ -326,97 +329,25 @@ window.MathJax = {
     });
     </script>
        <script>
-const bgm = document.getElementById('bgm');
-const toggleBtn = document.getElementById('toggleMusic');
+<script>
+        const bgm = document.getElementById('bgm');
+        const musicBtn = document.getElementById('musicBtn');
+        let isMuted = true;
 
-// 设置音频属性以提高自动播放成功率
-bgm.volume = 0.3; // 较低音量更容易被允许
-bgm.preload = "auto";
-
-let autoPlayAttempted = false;
-
-// 更积极的自动播放策略
-function attemptAutoPlay() {
-    if (!autoPlayAttempted && bgm.readyState >= 3) {
-        autoPlayAttempted = true;
-        
-        const playPromise = bgm.play();
-        
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                console.log('自动播放成功');
-                document.querySelector('.music-player').classList.add('playing');
-                toggleBtn.style.display = 'block';
-            }).catch(error => {
-                console.log('自动播放被阻止:', error);
-                // 显示播放按钮并等待用户交互
-                toggleBtn.style.display = 'block';
-                toggleBtn.innerHTML = '▶️ 点击播放';
-                
-                // 用户交互后重试播放
-                const retryPlay = () => {
-                    bgm.play().then(() => {
-                        document.querySelector('.music-player').classList.add('playing');
-                        toggleBtn.innerHTML = '<span class="play-icon">▶️</span><span class="pause-icon">⏸️</span>';
-                    });
-                    // 移除事件监听
-                    document.removeEventListener('click', retryPlay);
-                    document.removeEventListener('touchstart', retryPlay);
-                };
-                
-                document.addEventListener('click', retryPlay);
-                document.addEventListener('touchstart', retryPlay);
-            });
-        }
-    }
-}
-
-// 多种时机尝试自动播放
-bgm.addEventListener('loadeddata', attemptAutoPlay);
-bgm.addEventListener('canplay', attemptAutoPlay);
-bgm.addEventListener('canplaythrough', attemptAutoPlay);
-
-// 页面加载后也尝试一次
-window.addEventListener('load', () => {
-    setTimeout(attemptAutoPlay, 1000);
-});
-
-// 手动播放控制
-toggleBtn.addEventListener('click', function() {
-    if (bgm.paused) {
-        bgm.play().catch(error => {
-            console.log('播放失败:', error);
-            this.innerHTML = '❌ 播放失败';
+        musicBtn.addEventListener('click', function() {
+            if (isMuted) {
+                bgm.muted = false;
+                musicBtn.textContent = '暂停音乐';
+            } else {
+                bgm.muted = true;
+                musicBtn.textContent = '播放音乐';
+            }
+            isMuted = !isMuted;
         });
-    } else {
-        bgm.pause();
-    }
-});
-
-// 播放状态更新
-bgm.addEventListener('play', function() {
-    document.querySelector('.music-player').classList.add('playing');
-    console.log('音乐开始播放');
-});
-
-bgm.addEventListener('pause', function() {
-    document.querySelector('.music-player').classList.remove('playing');
-    console.log('音乐已暂停');
-});
-
-// 音频加载进度显示
-bgm.addEventListener('loadstart', () => console.log('开始加载音频'));
-bgm.addEventListener('progress', () => console.log('音频加载中...'));
-bgm.addEventListener('loadeddata', () => console.log('音频数据已加载'));
-bgm.addEventListener('canplay', () => console.log('音频可以播放'));
-bgm.addEventListener('error', (e) => console.log('音频错误:', e));
-
-// 初始显示播放按钮
-toggleBtn.style.display = 'block';
-
-</script>
+    </script>
   </body>
 </html>
+
 
 
 
