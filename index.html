@@ -7,8 +7,7 @@
         <!-- 引入外部CSS文件 -->
     <link rel="stylesheet" href="css/style.css">
     <!-- 预加载音频 -->
-    <link rel="preload" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3.mp3" as="audio" type="audio/mpeg">
-    <link rel="prefetch" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3.mp3">
+    <link rel="preload" href="music/知更鸟,HOYO-MiX,Chevy - 使一颗心免于哀伤（安可）If I Can Stop One Heart From Breaking (Encore).mp3" as="audio" type="audio/mpeg">
 </head>
     <!-- MathJax配置 -->
     <script>
@@ -327,44 +326,67 @@ window.MathJax = {
     });
     </script>
        <script>
-        // 使用上面的简化版或完整版JavaScript代码
-        const bgm = document.getElementById('bgm');
-        const toggleBtn = document.getElementById('toggleMusic');
-        const volumeSlider = document.getElementById('volumeSlider');
+    // 音乐播放器代码
+    const bgm = document.getElementById('bgm');
+    const toggleBtn = document.getElementById('toggleMusic');
+    let autoPlayAttempted = false;
 
-        bgm.volume = 0.5;
-        if (volumeSlider) volumeSlider.value = 0.5;
-
-        toggleBtn.addEventListener('click', function() {
-            if (bgm.paused) {
-                bgm.play().catch(error => alert('请点击播放按钮开始音乐'));
-            } else {
-                bgm.pause();
-            }
-        });
-
-        if (volumeSlider) {
-            volumeSlider.addEventListener('input', function() {
-                bgm.volume = this.value;
+    // 自动播放逻辑
+    bgm.addEventListener('canplay', function() {
+        if (!autoPlayAttempted) {
+            autoPlayAttempted = true;
+            bgm.play().then(() => {
+                document.querySelector('.music-player').classList.add('playing');
+                toggleBtn.style.display = 'block'; // 播放成功后才显示按钮
+            }).catch(error => {
+                console.log('自动播放被阻止，需要用户交互');
+                toggleBtn.style.display = 'block'; // 显示按钮让用户手动点击
             });
         }
+    });
 
-        bgm.addEventListener('play', function() {
-            document.querySelector('.music-player').classList.add('playing');
+    // 用户交互后重试播放
+    function handleFirstInteraction() {
+        if (bgm.paused && autoPlayAttempted) {
+            bgm.play().then(() => {
+                document.querySelector('.music-player').classList.add('playing');
+            });
+        }
+        // 移除监听器
+        ['click', 'touchstart', 'keydown'].forEach(event => {
+            document.removeEventListener(event, handleFirstInteraction);
         });
+    }
 
-        bgm.addEventListener('pause', function() {
-            document.querySelector('.music-player').classList.remove('playing');
-        });
+    // 添加用户交互监听
+    ['click', 'touchstart', 'keydown'].forEach(event => {
+        document.addEventListener(event, handleFirstInteraction);
+    });
 
-        document.querySelector('.music-player').addEventListener('click', function(e) {
-            if (e.target.id !== 'toggleMusic') {
-                this.classList.toggle('expanded');
-            }
-        });
+    // 手动播放控制
+    toggleBtn.addEventListener('click', function() {
+        if (bgm.paused) {
+            bgm.play();
+        } else {
+            bgm.pause();
+        }
+    });
+
+    // 播放状态更新
+    bgm.addEventListener('play', function() {
+        document.querySelector('.music-player').classList.add('playing');
+    });
+
+    bgm.addEventListener('pause', function() {
+        document.querySelector('.music-player').classList.remove('playing');
+    });
+
+    // 初始隐藏播放按钮
+    toggleBtn.style.display = 'none';
     </script>
   </body>
 </html>
+
 
 
 
