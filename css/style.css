@@ -29,42 +29,15 @@ h1, h2, h3, h4, h5, h6 {
       
       /* 修复 MathJax 容器 - 重点修复对齐 */
 mjx-container {
-  display: inline-block;
-  margin: 0 !important; /* 重置所有外边距 */
-  overflow-x: auto;
-  overflow-y: hidden !important;
-  max-width: 100%;
-  vertical-align: -0.35ex !important; /* 关键：精确调整垂直对齐 */
-  line-height: 1.2 !important; /* 固定行高 */
-}
-
-/* 针对行内公式的垂直对齐修复 */
-mjx-container[jax="SVG"][display="false"] {
-  display: inline-block !important;
-  vertical-align: -0.40ex !important; /* 微调此值以适应你的字体 */
-  line-height: 1 !important;
-  margin: 0 !important; /* 清除可能影响定位的边距 */
-}
-
-/* 确保 SVG 内容本身对齐正确 */
-mjx-container[jax="SVG"] mjx-svg {
-  vertical-align: middle !important; /* 或尝试 baseline */
-}
-
-/* 可选：调整显示公式（独行公式）的间距，确保不影响行内公式 */
-mjx-container[jax="SVG"][display="true"] {
-  display: block !important;
-  text-align: center;
-  margin: 1em 0 !important;
-}
-/* 完全隐藏辅助元素 */
+      display: inline-block;
+      margin: auto 2px -2px;
+      overflow-x: auto;
+      overflow-y: hidden !important; /* 唯一需要的关键修改 */
+      max-width: 100%; /* 限制最大宽度为父容器宽度 */
+    }
+/* 隐藏辅助元素 */
 mjx-assistive-mml {
   display: none !important;
-}
-
-/* 确保公式周围的文本对齐正常 */
-p, li, span {
-  line-height: 1.6; /* 统一的文本行高 */
 }
       :root {
         --bg-color: #ffffff;
