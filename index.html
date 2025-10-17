@@ -23,13 +23,22 @@ window.MathJax = {
 <!-- 使用defer加载，确保顺序且不阻塞 -->
 <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
     <style>
-/* 在 style.css 中定义霞鹜文楷字体 */
 /* 使用CDN导入霞鹜文楷 */
-@import url('https://cdn.jsdelivr.net/npm/hong-lei-board-book-webfont@1.0.0/style.css');
-
-body {
-    font-family: 'HongLeiBoardBook', 'Microsoft YaHei', sans-serif;
-}
+@import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css");
+/* 统一使用 'LXGW WenKai' */
+      body {
+        font-family: "LXGW WenKai", "Microsoft YaHei", "PingFang SC", sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      h1,h2,h3,h4,h5,h6 {
+        font-family: "LXGW WenKai", serif;
+        font-weight: normal;
+      }
+      p,li,span,div {
+        font-family: "LXGW WenKai", sans-serif; /* 明确指定所有文本元素 */
+      }
+      
       mjx-container {
       display: inline-block;
       margin: auto 2px -2px;
@@ -696,6 +705,7 @@ body {
     </script>
   </body>
 </html>
+
 
 
 
