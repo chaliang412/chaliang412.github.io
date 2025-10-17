@@ -14,12 +14,21 @@ window.MathJax = {
     displayMath: [['$$', '$$'], ['\\[', '\\]']]
   },
   svg: {
-    fontCache: 'global'
+    fontCache: 'global',
+    linebreaks: { automatic: true } // 长公式自动换行，减少溢出
   },
   options: {
-    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+    assistiveMml: { disabled: true } // 从源头禁用辅助元素，比CSS隐藏更彻底
+  },
+  // 强制渲染后为公式容器添加垂直溢出隐藏（兜底方案）
+  renderActions: {
+    addOverflow: [1000, (doc) => {
+      doc.querySelectorAll('mjx-container').forEach(el => {
+        el.style.overflowY = 'hidden';
+      });
+    }, ['EndDocument']]
   }
-  // 删除startup.typeset: false，默认自动渲染
 };
 </script>
 <!-- 使用defer加载，确保顺序且不阻塞 -->
@@ -238,6 +247,7 @@ window.MathJax = {
     </script>
   </body>
 </html>
+
 
 
 
