@@ -27,12 +27,20 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
       
-      mjx-container {
-      display: inline-block;
-      margin: auto 2px -2px;
-      overflow-x: auto;
-      max-width: 100%; /* 限制最大宽度为父容器宽度 */
-    }
+      /* 1. 修复 mjx-container：禁用垂直滚动，避免竖直滚动条 */
+mjx-container {
+  display: inline-block;
+  margin: auto 2px -2px;
+  overflow-x: auto; /* 保留水平滚动（长公式时有用） */
+  overflow-y: hidden !important; /* 关键：强制隐藏垂直滚动条 */
+  max-width: 100%;
+  vertical-align: middle; /* 可选：优化公式与文字的垂直对齐 */
+}
+
+/* 2. 隐藏 MathJax 辅助元素，避免其影响高度计算 */
+mjx-assistive-mml {
+  display: none !important; /* 完全隐藏辅助元素，不影响布局 */
+}
       :root {
         --bg-color: #ffffff;
         --text-color: #333333;
