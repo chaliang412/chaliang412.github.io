@@ -14,33 +14,12 @@ window.MathJax = {
     displayMath: [['$$', '$$'], ['\\[', '\\]']]
   },
   svg: {
-    fontCache: 'global',
-    linebreaks: { automatic: true },
-    // 关键：调整对齐和缩放
-    scale: 1,
-    displayAlign: 'center',
-    merrorInheritFont: true,
-    // 改进对齐参数
-    exFactor: 0.08,  // 减少额外高度
-    displayOverflow: 'hidden'
-  },
-  chtml: {
-    // 如果是 CHTML 渲染也设置
-    scale: 1,
-    displayAlign: 'center'
+    fontCache: 'global'
   },
   options: {
-    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-    assistiveMml: { disabled: true }
-  },
-  startup: {
-    typeset: false, // 稍后手动排版
-    ready: () => {
-      MathJax.startup.defaultReady();
-      // 配置完成后手动排版
-      MathJax.typesetPromise();
-    }
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
   }
+  // 删除startup.typeset: false，默认自动渲染
 };
 </script>
 <!-- 使用defer加载，确保顺序且不阻塞 -->
@@ -259,6 +238,7 @@ window.MathJax = {
     </script>
   </body>
 </html>
+
 
 
 
