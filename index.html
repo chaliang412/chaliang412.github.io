@@ -24,21 +24,25 @@ window.MathJax = {
 <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
     <style>
 /* 在 style.css 中定义霞鹜文楷字体 */
+/* 使用CDN导入霞鹜文楷 */
 @import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css');
 
+/* 统一使用正确的字体名称 */
 body {
-    font-family: 'LXGW WenKai Screen', 'Microsoft YaHei', sans-serif;
+    font-family: 'LXGW WenKai Screen', 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
 
-/* 标题也使用文楷 */
+/* 标题也使用相同的字体名称 */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'LXGW WenKai', serif;
+    font-family: 'LXGW WenKai Screen', 'Microsoft YaHei', serif;
     font-weight: normal;
 }
 
-/* 代码块保持等宽字体 */
+/* 代码块 - 文楷虽然是等宽字体，但建议保留专业等宽字体 */
 code, pre {
-    font-family: 'LXGW WenKai', 'Courier New', monospace;
+    font-family: 'Courier New', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    /* 如果确实想用文楷显示代码： */
+    /* font-family: 'LXGW WenKai Screen', 'Courier New', monospace; */
 }
       mjx-container {
       display: inline-block;
@@ -697,8 +701,16 @@ code, pre {
         });
       });
     </script>
+      <script>
+    // 检查字体加载
+    document.fonts.ready.then(() => {
+        const isLoaded = document.fonts.check('16px "LXGW WenKai Screen"');
+        console.log('文楷字体加载:', isLoaded ? '成功' : '失败');
+    });
+    </script>
   </body>
 </html>
+
 
 
 
