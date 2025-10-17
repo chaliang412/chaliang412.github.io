@@ -15,19 +15,31 @@ window.MathJax = {
   },
   svg: {
     fontCache: 'global',
-    linebreaks: { automatic: true } // 长公式自动换行，减少溢出
+    linebreaks: { automatic: true },
+    // 关键：调整对齐和缩放
+    scale: 1,
+    displayAlign: 'center',
+    merrorInheritFont: true,
+    // 改进对齐参数
+    exFactor: 0.08,  // 减少额外高度
+    displayOverflow: 'hidden'
+  },
+  chtml: {
+    // 如果是 CHTML 渲染也设置
+    scale: 1,
+    displayAlign: 'center'
   },
   options: {
     skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-    assistiveMml: { disabled: true } // 从源头禁用辅助元素，比CSS隐藏更彻底
+    assistiveMml: { disabled: true }
   },
-  // 强制渲染后为公式容器添加垂直溢出隐藏（兜底方案）
-  renderActions: {
-    addOverflow: [1000, (doc) => {
-      doc.querySelectorAll('mjx-container').forEach(el => {
-        el.style.overflowY = 'hidden';
-      });
-    }, ['EndDocument']]
+  startup: {
+    typeset: false, // 稍后手动排版
+    ready: () => {
+      MathJax.startup.defaultReady();
+      // 配置完成后手动排版
+      MathJax.typesetPromise();
+    }
   }
 };
 </script>
@@ -247,6 +259,7 @@ window.MathJax = {
     </script>
   </body>
 </html>
+
 
 
 
