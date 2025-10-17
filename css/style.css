@@ -41,7 +41,7 @@ mjx-container {
 /* 针对行内公式的垂直对齐修复 */
 mjx-container[jax="SVG"][display="false"] {
   display: inline-block !important;
-  vertical-align: -0.35ex !important; /* 微调此值以适应你的字体 */
+  vertical-align: -0.40ex !important; /* 微调此值以适应你的字体 */
   line-height: 1 !important;
   margin: 0 !important; /* 清除可能影响定位的边距 */
 }
