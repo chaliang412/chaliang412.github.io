@@ -1,18 +1,25 @@
 /* 使用CDN导入霞鹜文楷 */
 @import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css");
-/* 统一使用 'LXGW WenKai' */
-      body {
-        font-family: "LXGW WenKai", "Microsoft YaHei", "PingFang SC", sans-serif;
-        font-size: 16px;
-        line-height: 1.6;
-      }
-      h1,h2,h3,h4,h5,h6 {
-        font-family: "LXGW WenKai", serif;
-        font-weight: normal;
-      }
-      p,li,span,div {
-        font-family: "LXGW WenKai", sans-serif; /* 明确指定所有文本元素 */
-      }
+
+/* 简化但完整的字体栈 */
+* {
+  font-family: 
+    "LXGW WenKai",
+    -apple-system,           /* 覆盖所有苹果设备 */
+    "PingFang SC",           /* iOS & macOS 中文 */
+    "Microsoft YaHei",       /* Windows 中文 */
+    sans-serif;
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%; /* 关键：防止iOS缩放 */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: normal;
+}
       
       mjx-container {
       display: inline-block;
