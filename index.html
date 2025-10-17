@@ -24,18 +24,10 @@ window.MathJax = {
 <script src="https://cdn.bootcdn.net/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" defer></script>
     <style>
 /* 在 style.css 中定义霞鹜文楷字体 */
-@font-face {
-    font-family: 'LXGW WenKai';
-    src: url('/fonts/LXGWWenKai-Regular.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+@import url('https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css');
 
-/* 应用字体到网站 */
 body {
-    font-family: 'LXGW WenKai', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
-    line-height: 1.6;
+    font-family: 'LXGW WenKai Screen', 'Microsoft YaHei', sans-serif;
 }
 
 /* 标题也使用文楷 */
@@ -707,6 +699,7 @@ code, pre {
     </script>
   </body>
 </html>
+
 
 
 
