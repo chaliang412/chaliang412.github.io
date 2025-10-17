@@ -326,66 +326,98 @@ window.MathJax = {
     });
     </script>
        <script>
-    // 音乐播放器代码
-    const bgm = document.getElementById('bgm');
-    const toggleBtn = document.getElementById('toggleMusic');
-    let autoPlayAttempted = false;
+const bgm = document.getElementById('bgm');
+const toggleBtn = document.getElementById('toggleMusic');
 
-    // 自动播放逻辑
-    bgm.addEventListener('canplay', function() {
-        if (!autoPlayAttempted) {
-            autoPlayAttempted = true;
-            bgm.play().then(() => {
+// 设置音频属性以提高自动播放成功率
+bgm.volume = 0.3; // 较低音量更容易被允许
+bgm.preload = "auto";
+
+let autoPlayAttempted = false;
+
+// 更积极的自动播放策略
+function attemptAutoPlay() {
+    if (!autoPlayAttempted && bgm.readyState >= 3) {
+        autoPlayAttempted = true;
+        
+        const playPromise = bgm.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                console.log('自动播放成功');
                 document.querySelector('.music-player').classList.add('playing');
-                toggleBtn.style.display = 'block'; // 播放成功后才显示按钮
+                toggleBtn.style.display = 'block';
             }).catch(error => {
-                console.log('自动播放被阻止，需要用户交互');
-                toggleBtn.style.display = 'block'; // 显示按钮让用户手动点击
+                console.log('自动播放被阻止:', error);
+                // 显示播放按钮并等待用户交互
+                toggleBtn.style.display = 'block';
+                toggleBtn.innerHTML = '▶️ 点击播放';
+                
+                // 用户交互后重试播放
+                const retryPlay = () => {
+                    bgm.play().then(() => {
+                        document.querySelector('.music-player').classList.add('playing');
+                        toggleBtn.innerHTML = '<span class="play-icon">▶️</span><span class="pause-icon">⏸️</span>';
+                    });
+                    // 移除事件监听
+                    document.removeEventListener('click', retryPlay);
+                    document.removeEventListener('touchstart', retryPlay);
+                };
+                
+                document.addEventListener('click', retryPlay);
+                document.addEventListener('touchstart', retryPlay);
             });
         }
-    });
-
-    // 用户交互后重试播放
-    function handleFirstInteraction() {
-        if (bgm.paused && autoPlayAttempted) {
-            bgm.play().then(() => {
-                document.querySelector('.music-player').classList.add('playing');
-            });
-        }
-        // 移除监听器
-        ['click', 'touchstart', 'keydown'].forEach(event => {
-            document.removeEventListener(event, handleFirstInteraction);
-        });
     }
+}
 
-    // 添加用户交互监听
-    ['click', 'touchstart', 'keydown'].forEach(event => {
-        document.addEventListener(event, handleFirstInteraction);
-    });
+// 多种时机尝试自动播放
+bgm.addEventListener('loadeddata', attemptAutoPlay);
+bgm.addEventListener('canplay', attemptAutoPlay);
+bgm.addEventListener('canplaythrough', attemptAutoPlay);
 
-    // 手动播放控制
-    toggleBtn.addEventListener('click', function() {
-        if (bgm.paused) {
-            bgm.play();
-        } else {
-            bgm.pause();
-        }
-    });
+// 页面加载后也尝试一次
+window.addEventListener('load', () => {
+    setTimeout(attemptAutoPlay, 1000);
+});
 
-    // 播放状态更新
-    bgm.addEventListener('play', function() {
-        document.querySelector('.music-player').classList.add('playing');
-    });
+// 手动播放控制
+toggleBtn.addEventListener('click', function() {
+    if (bgm.paused) {
+        bgm.play().catch(error => {
+            console.log('播放失败:', error);
+            this.innerHTML = '❌ 播放失败';
+        });
+    } else {
+        bgm.pause();
+    }
+});
 
-    bgm.addEventListener('pause', function() {
-        document.querySelector('.music-player').classList.remove('playing');
-    });
+// 播放状态更新
+bgm.addEventListener('play', function() {
+    document.querySelector('.music-player').classList.add('playing');
+    console.log('音乐开始播放');
+});
 
-    // 初始隐藏播放按钮
-    toggleBtn.style.display = 'none';
-    </script>
+bgm.addEventListener('pause', function() {
+    document.querySelector('.music-player').classList.remove('playing');
+    console.log('音乐已暂停');
+});
+
+// 音频加载进度显示
+bgm.addEventListener('loadstart', () => console.log('开始加载音频'));
+bgm.addEventListener('progress', () => console.log('音频加载中...'));
+bgm.addEventListener('loadeddata', () => console.log('音频数据已加载'));
+bgm.addEventListener('canplay', () => console.log('音频可以播放'));
+bgm.addEventListener('error', (e) => console.log('音频错误:', e));
+
+// 初始显示播放按钮
+toggleBtn.style.display = 'block';
+
+</script>
   </body>
 </html>
+
 
 
 
