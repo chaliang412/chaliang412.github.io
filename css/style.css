@@ -27,34 +27,48 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
       
-      /* 修复 MathJax 容器滚动条问题 */
+      /* 修复 MathJax 容器 - 重点修复对齐 */
 mjx-container {
   display: inline-block;
-  margin: auto 2px -2px;
+  margin: 0 !important; /* 重置所有外边距 */
   overflow-x: auto;
   overflow-y: hidden !important;
   max-width: 100%;
-  vertical-align: middle;
-  line-height: normal !important; /* 关键：重置行高 */
+  vertical-align: -0.35ex !important; /* 关键：精确调整垂直对齐 */
+  line-height: 1.2 !important; /* 固定行高 */
 }
 
-/* 针对行内公式的特殊处理 */
+/* 行内公式的特殊处理 */
 mjx-container[jax="SVG"][display="false"] {
   overflow: visible !important;
   min-height: 0 !important;
   max-height: none !important;
+  vertical-align: middle !important; /* 行内公式使用中间对齐 */
 }
 
 /* SVG 内容样式调整 */
 mjx-container[jax="SVG"] mjx-svg {
   overflow: visible !important;
+  display: inline-block;
+  vertical-align: middle !important;
+}
+
+/* 针对显示公式（独行公式） */
+mjx-container[jax="SVG"][display="true"] {
+  display: block !important;
+  text-align: center;
+  margin: 1em 0 !important;
+  vertical-align: baseline !important;
 }
 
 /* 完全隐藏辅助元素 */
-.MathJax_SVG_Processing, mjx-assistive-mml {
+mjx-assistive-mml {
   display: none !important;
-  position: absolute !important;
-  left: -10000px !important;
+}
+
+/* 确保公式周围的文本对齐正常 */
+p, li, span {
+  line-height: 1.6; /* 统一的文本行高 */
 }
       :root {
         --bg-color: #ffffff;
