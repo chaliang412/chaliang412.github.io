@@ -1,12 +1,6 @@
 /* 使用CDN导入霞鹜文楷 */
 @import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.6.0/style.css");
 
-/* 定义全局颜色变量 */
-:root {
-  --bg-color: #ffffff;
-  --text-color: #333333;
-}
-
 /* 不再使用 * 选择器设置字体，避免影响 MathJax */
 body {
   font-family: 
@@ -44,6 +38,8 @@ h1, h2, h3, h4, h5, h6 {
 .MathJax_CHTML {
   font-family: MJXZERO, MJXTEX, MJXTEX-I, MJXTEX-S1, serif !important;
 }
+
+/* 定义全局颜色变量 */
       :root {
         --bg-color: #ffffff;
         --text-color: #333333;
