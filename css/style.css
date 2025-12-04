@@ -1,13 +1,14 @@
 /* 使用CDN导入霞鹜文楷 */
 @import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.6.0/style.css");
 
-/* 简化但完整的字体栈 */
+/* 定义全局颜色变量 */
 :root {
   --bg-color: #ffffff;
   --text-color: #333333;
 }
 
-* {
+/* 不再使用 * 选择器设置字体，避免影响 MathJax */
+body {
   font-family: 
     "LXGW WenKai",
     "PingFang SC",
@@ -15,10 +16,6 @@
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
-  box-sizing: border-box;
-}
-
-body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
@@ -29,10 +26,23 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+/* 确保常用文本元素继承 body 字体 */
+p, div, span, li, ul, ol, td, th, label, button, input, textarea, blockquote, pre, code, a, h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+}
+
+/* 标题样式 */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 600; /* 修改为正常加粗而非normal */
+  font-weight: 600; /* 正常加粗 */
   margin-top: 1.5em;
   margin-bottom: 0.5em;
+}
+
+/* 关键：重置 MathJax 公式字体，防止被霞鹜文楷影响 */
+.mjx-chtml,
+.MathJax,
+.MathJax_CHTML {
+  font-family: MJXZERO, MJXTEX, MJXTEX-I, MJXTEX-S1, serif !important;
 }
       :root {
         --bg-color: #ffffff;
