@@ -6,37 +6,34 @@
     <title>我的主页</title>
         <!-- 引入外部CSS文件 -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- MathJax配置 -->
-<style>
-/* 修复公式字体 */
-.mjx-chtml {
-  font-family: initial !important;
-  line-height: 1 !important;
-}
-
-/* 可选：微调行内公式垂直对齐 */
-.mjx-container[display="false"] {
-  vertical-align: middle;
-}
-</style>
-
-<script>
-MathJax = {
-  tex: {
-    inlineMath: [['$', '$'], ['\\(', '\\)']],
-    processEscapes: true
-  },
-  options: {
-    // 不要禁用 addMenu
-  }
-};
-</script>
-<script 
-  type="text/javascript" 
-  id="MathJax-script" 
-  async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
-</script>
+     <!-- 加载MathJax库 -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                ignoreHtmlClass: 'tex2jax_ignore'
+            },
+            startup: {
+                ready: () => {
+                    console.log('MathJax is ready');
+                    MathJax.startup.defaultReady();
+                    // 页面加载完成后重新渲染公式
+                    if (typeof initPage === 'function') {
+                        initPage();
+                    }
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async 
+            src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+    </script>
 
   </head>
   <body>
@@ -77,7 +74,7 @@ MathJax = {
       <section id="research" class="card">
         <h2 class="card-title">研究方向</h2>
         <p>
-          我的主要研究方向包括深度学习理论$\sin(5x)=2\sin x\cos x$、优化算法和数学建模。以下是一些我正在研究的数学公式：
+          我的主要研究方向包括深度学习理论$\sin(6x)=2\sin x\cos x$、优化算法和数学建模。以下是一些我正在研究的数学公式：
         </p>
 
         <p>神经网络的前向传播公式：</p>
@@ -262,6 +259,7 @@ MathJax = {
     </script>
   </body>
 </html>
+
 
 
 
