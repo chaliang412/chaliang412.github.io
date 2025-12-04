@@ -26,17 +26,6 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
 }
-/* 但排除MathJax元素 */
-.mathjax-container, 
-.MathJax,
-.mjx-chtml,
-.mjx-math,
-.MJX-TEX {
-    font-family: MJXc-TeX-math-I, MJXc-TeX-math-Ix, MJXc-TeX-math-Iw, 
-                 MJXc-TeX-math-B, MJXc-TeX-math-Bx, MJXc-TeX-math-Bw,
-                 MJXc-TeX-math-M, MJXc-TeX-math-Mx, MJXc-TeX-math-Mw,
-                 MJXc-TeX-math-R, MJXc-TeX-math-Rx, MJXc-TeX-math-Rw !important;
-}
       
       /* 修复 MathJax 容器 - 重点修复对齐 */
 mjx-container {
