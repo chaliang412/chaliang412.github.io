@@ -1,21 +1,27 @@
 /* 使用CDN导入霞鹜文楷 */
-@import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.1.0/style.css");
+@import url("https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.6.0/style.css");
 
 /* 简化但完整的字体栈 */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+}
+
 * {
   font-family: 
     "LXGW WenKai",
-    -apple-system,           /* 覆盖所有苹果设备 */
-    "PingFang SC",           /* iOS & macOS 中文 */
-    "Microsoft YaHei",       /* Windows 中文 */
+    "PingFang SC",
+    "Microsoft YaHei",
+    -apple-system,
+    BlinkMacSystemFont,
     sans-serif;
+  box-sizing: border-box;
 }
 
 body {
   font-size: 16px;
   line-height: 1.6;
   -webkit-text-size-adjust: 100%;
-  font-family: "LXGW WenKai", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; /* 保留文楷 */
   background-color: var(--bg-color);
   color: var(--text-color);
   margin: 0;
@@ -24,20 +30,30 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight: normal;
+  font-weight: 600; /* 修改为正常加粗而非normal */
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
 }
-      
-      /* 修复 MathJax 容器 - 重点修复对齐 */
+
+/* MathJax 容器优化 */
 mjx-container {
-      display: inline-block;
-      margin: auto 2px -2px;
-      overflow-x: auto;
-      overflow-y: hidden !important; /* 唯一需要的关键修改 */
-      max-width: 100%; /* 限制最大宽度为父容器宽度 */
-    }
+  display: inline-block;
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  vertical-align: middle; /* 改善垂直对齐 */
+}
+
 /* 隐藏辅助元素 */
 mjx-assistive-mml {
-  display: none !important;
+  position: absolute;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 0;
+  border: 0;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
 }
       :root {
         --bg-color: #ffffff;
