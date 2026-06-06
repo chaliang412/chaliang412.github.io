@@ -1,0 +1,1628 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>📐 思维导图</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --bg2: #f1f5f9;
+        --fg: #0f172a;
+        --fg2: #475569;
+        --muted: #94a3b8;
+        --accent: #0d9488;
+        --accent-light: #ccfbf1;
+        --card: #ffffff;
+        --border: #e2e8f0;
+        --line-color: #94a3b8;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.1);
+        --root-bg: #0d9488;
+      }
+      .dark {
+        --bg: #0f172a;
+        --bg2: #1e293b;
+        --fg: #f1f5f9;
+        --fg2: #94a3b8;
+        --muted: #64748b;
+        --accent: #2dd4bf;
+        --accent-light: #134e4a;
+        --card: #1e293b;
+        --border: #334155;
+        --line-color: #94a3b8;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.5);
+        --root-bg: #0f766e;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        height: 100vh;
+        overflow: hidden;
+        transition:
+          background 0.2s,
+          color 0.2s;
+      }
+
+      .toolbar {
+        height: 54px;
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        gap: 6px;
+        box-shadow: var(--shadow);
+        z-index: 50;
+        user-select: none;
+        flex-wrap: wrap;
+        overflow-x: auto;
+      }
+      .toolbar-title {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--accent);
+        margin-right: 4px;
+        white-space: nowrap;
+        letter-spacing: -0.3px;
+      }
+      .tb-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg2);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-family: inherit;
+      }
+      .tb-btn:hover {
+        background: var(--bg2);
+        color: var(--fg);
+        border-color: var(--muted);
+      }
+      .tb-btn i {
+        font-size: 12px;
+      }
+      .tb-btn.active {
+        background: var(--accent-light);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .divider {
+        width: 1px;
+        height: 24px;
+        background: var(--border);
+        margin: 0 2px;
+        flex-shrink: 0;
+      }
+
+      .main-container {
+        display: flex;
+        height: calc(100vh - 54px);
+      }
+
+      .editor-panel {
+        width: 320px;
+        min-width: 180px;
+        max-width: 60vw;
+        background: var(--card);
+        display: flex;
+        flex-direction: column;
+        z-index: 20;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .editor-panel.collapsed {
+        width: 0 !important;
+        min-width: 0;
+        overflow: hidden;
+        border-right: none;
+      }
+      .editor-header {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .editor-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--fg2);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .editor-hint {
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .editor-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .editor-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg2);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.15s;
+      }
+      .editor-action-btn:hover {
+        background: var(--bg2);
+        color: var(--fg);
+        border-color: var(--muted);
+      }
+      .editor-action-btn:active {
+        transform: scale(0.92);
+      }
+      #editor {
+        flex: 1;
+        width: 100%;
+        border: none;
+        resize: none;
+        padding: 14px 16px;
+        font-family: "Menlo", "Consolas", monospace;
+        font-size: 13px;
+        line-height: 1.6;
+        background: var(--bg);
+        color: var(--fg);
+        outline: none;
+        tab-size: 2;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+      }
+
+      .resizer {
+        width: 6px;
+        cursor: col-resize;
+        background: var(--border);
+        position: relative;
+        z-index: 25;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      .resizer:hover,
+      .resizer.dragging {
+        background: var(--accent);
+      }
+      .resizer::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 2px;
+        height: 32px;
+        border-radius: 2px;
+        background: var(--muted);
+        opacity: 0.5;
+      }
+      .resizer:hover::after,
+      .resizer.dragging::after {
+        background: var(--accent);
+        opacity: 1;
+      }
+
+      .workspace {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        background: var(--bg);
+        background-image: radial-gradient(var(--border) 1px, transparent 1px);
+        background-size: 24px 24px;
+      }
+      .canvas-scroll {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+        cursor: grab;
+      }
+      .canvas-scroll:active {
+        cursor: grabbing;
+      }
+
+      #mindmap-render {
+        position: relative;
+        display: inline-block;
+        min-width: 100%;
+        min-height: 100%;
+        transform-origin: 0 0;
+        padding: 180px 220px;
+        background-color: transparent;
+      }
+
+      #svg-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        overflow: visible;
+      }
+
+      .mindmap-layout {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 70px;
+      }
+      .mindmap-left,
+      .mindmap-right {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        position: relative;
+      }
+      .mindmap-left {
+        align-items: flex-end;
+      }
+      .mindmap-right {
+        align-items: flex-start;
+      }
+
+      .branch {
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+      .left-branch {
+        flex-direction: row-reverse;
+      }
+      .right-branch {
+        flex-direction: row;
+      }
+
+      .children {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        position: relative;
+      }
+      .left-branch > .children {
+        margin-right: 54px;
+      }
+      .right-branch > .children {
+        margin-left: 54px;
+      }
+
+      .node {
+        padding: 8px 18px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        background: var(--card);
+        color: var(--fg);
+        border: 1.5px solid var(--border);
+        box-shadow: var(--shadow);
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1.35;
+      }
+      .node:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+        z-index: 10;
+      }
+
+      .node-inner {
+        display: inline;
+        vertical-align: middle;
+        line-height: 1.35;
+      }
+
+      .root-node {
+        padding: 12px 32px;
+        font-size: 20px;
+        font-weight: 800;
+        border-radius: 40px;
+        background: var(--root-bg);
+        color: #fff;
+        border: none;
+        box-shadow: var(--shadow-lg);
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1.3;
+      }
+      .dark .root-node {
+        background: var(--root-bg);
+        color: white;
+        border: 1px solid var(--accent);
+      }
+
+      .zoom-bar {
+        position: absolute;
+        bottom: 24px;
+        right: 24px;
+        display: flex;
+        gap: 8px;
+        z-index: 30;
+      }
+      .zoom-btn {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--fg2);
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        font-weight: bold;
+      }
+      .zoom-btn:hover {
+        color: var(--fg);
+        border-color: var(--accent);
+        background: var(--bg2);
+      }
+      .zoom-text {
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 600;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 30px;
+        color: var(--fg2);
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--fg);
+        color: var(--bg);
+        padding: 10px 28px;
+        border-radius: 40px;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        transition: all 0.25s ease;
+        z-index: 999;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .transparent-export .workspace,
+      .transparent-export #mindmap-render {
+        background: transparent !important;
+        background-image: none !important;
+      }
+
+      .color-picker-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        z-index: 200;
+        box-shadow: var(--shadow-lg);
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+        min-width: 300px;
+      }
+      .color-picker-popup.show {
+        display: flex;
+      }
+      .color-picker-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 199;
+        display: none;
+      }
+      .color-picker-overlay.show {
+        display: block;
+      }
+      .color-picker-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--fg);
+      }
+      .color-picker-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .color-picker-input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: "Menlo", monospace;
+        font-size: 14px;
+        background: var(--bg);
+        color: var(--fg);
+        outline: none;
+      }
+      .color-picker-input:focus {
+        border-color: var(--accent);
+      }
+      .color-preview {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+        flex-shrink: 0;
+      }
+      .color-picker-hint {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .color-picker-btns {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .cp-btn {
+        padding: 8px 18px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--fg2);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        font-family: inherit;
+        transition: all 0.15s;
+      }
+      .cp-btn:hover {
+        background: var(--bg2);
+      }
+      .cp-btn.primary {
+        background: var(--accent);
+        color: #fff;
+        border-color: var(--accent);
+      }
+      .cp-btn.primary:hover {
+        opacity: 0.9;
+      }
+
+      .color-presets {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .color-preset {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .color-preset:hover {
+        transform: scale(1.15);
+        border-color: var(--fg);
+      }
+
+      @media print {
+        .toolbar,
+        .editor-panel,
+        .zoom-bar,
+        .toast,
+        .resizer {
+          display: none !important;
+        }
+        .main-container {
+          height: auto !important;
+        }
+        body {
+          height: auto !important;
+          overflow: visible !important;
+          background: white !important;
+        }
+        .workspace {
+          overflow: visible !important;
+          background: white !important;
+          background-image: none !important;
+          position: static !important;
+        }
+        .canvas-scroll {
+          overflow: visible !important;
+          position: static !important;
+        }
+        #mindmap-render {
+          transform: none !important;
+          background: white !important;
+          background-image: none !important;
+          padding: 20px !important;
+          position: static !important;
+        }
+        #svg-layer {
+          overflow: visible !important;
+          position: absolute !important;
+        }
+        .mindmap-layout {
+          position: relative !important;
+        }
+        .node,
+        .root-node {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+        .branch {
+          break-inside: avoid;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .toolbar {
+          height: auto;
+          min-height: 44px;
+          padding: 6px 8px;
+          gap: 4px;
+        }
+        .tb-btn {
+          padding: 5px 8px;
+          font-size: 11px;
+        }
+        .editor-panel {
+          width: 50vw !important;
+          min-width: 140px;
+        }
+        #mindmap-render {
+          padding: 80px 60px;
+        }
+        .mindmap-layout {
+          gap: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <div class="toolbar-title">📐Mind Map</div>
+      <div class="divider"></div>
+      <button class="tb-btn" id="btn-editor">
+        <i class="fa-solid fa-code"></i> 源代码
+      </button>
+      <div class="divider"></div>
+      <button class="tb-btn" id="btn-png">
+        <i class="fa-solid fa-image"></i> PNG
+      </button>
+      <button class="tb-btn" id="btn-jpg">
+        <i class="fa-solid fa-image"></i> JPG
+      </button>
+      <button class="tb-btn" id="btn-pdf">
+        <i class="fa-solid fa-file-pdf"></i> PDF
+      </button>
+      <button class="tb-btn" id="btn-md">
+        <i class="fa-brands fa-markdown"></i> Markdown
+      </button>
+      <button class="tb-btn" id="btn-json">
+        <i class="fa-solid fa-brackets-curly"></i> JSON
+      </button>
+      <button class="tb-btn" id="btn-txt">
+        <i class="fa-solid fa-file-lines"></i> TXT源码
+      </button>
+      <div class="divider"></div>
+      <button class="tb-btn" id="btn-undo">
+        <i class="fa-solid fa-rotate-left"></i> 撤销
+      </button>
+      <button class="tb-btn" id="btn-dark">
+        <i class="fa-solid fa-moon"></i> 夜间
+      </button>
+      <button class="tb-btn" id="btn-color">
+        <i class="fa-solid fa-palette"></i> 标题色
+      </button>
+      <button class="tb-btn" id="btn-reset">
+        <i class="fa-solid fa-rotate-left"></i> 重置
+      </button>
+    </div>
+
+    <div class="main-container">
+      <div class="editor-panel" id="editor-panel">
+        <div class="editor-header">
+          <div class="editor-label">
+            <i class="fa-solid fa-pen-nib"></i> 源码编辑
+          </div>
+          <div class="editor-actions">
+            <button
+              class="editor-action-btn"
+              id="btn-indent"
+              title="缩进 (Tab)"
+            >
+              <i class="fa-solid fa-indent"></i>
+            </button>
+            <button
+              class="editor-action-btn"
+              id="btn-outdent"
+              title="反缩进 (Shift+Tab)"
+            >
+              <i class="fa-solid fa-outdent"></i>
+            </button>
+          </div>
+        </div>
+        <textarea id="editor" spellcheck="false"></textarea>
+      </div>
+      <div class="resizer" id="resizer"></div>
+
+      <div class="workspace">
+        <div class="canvas-scroll" id="canvas-scroll">
+          <div id="mindmap-render">
+            <svg id="svg-layer"></svg>
+            <div class="mindmap-layout" id="mindmap-layout"></div>
+          </div>
+        </div>
+        <div class="zoom-bar">
+          <button class="zoom-btn" id="zoom-out">
+            <i class="fa-solid fa-minus"></i>
+          </button>
+          <div class="zoom-text" id="zoom-val">100%</div>
+          <button class="zoom-btn" id="zoom-in">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+          <button class="zoom-btn" id="zoom-fit">
+            <i class="fa-solid fa-expand"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="color-picker-overlay" id="color-overlay"></div>
+    <div class="color-picker-popup" id="color-popup">
+      <div class="color-picker-title">自定义标题背景色</div>
+      <div class="color-picker-row">
+        <div class="color-preview" id="color-preview"></div>
+        <input
+          class="color-picker-input"
+          id="color-input"
+          type="text"
+          placeholder="#0D9488"
+          maxlength="7"
+          spellcheck="false"
+        />
+      </div>
+      <div class="color-picker-hint">
+        请输入16进制颜色代码，例如：#0D9488、#E11D48、#7C3AED
+      </div>
+      <div class="color-presets" id="color-presets"></div>
+      <div class="color-picker-btns">
+        <button class="cp-btn" id="cp-cancel">取消</button>
+        <button class="cp-btn" id="cp-reset">恢复默认</button>
+        <button class="cp-btn primary" id="cp-apply">应用</button>
+      </div>
+    </div>
+
+    <script>
+      // ======================= 核心：健壮缩进解析器 =======================
+      function parseMindmap(text) {
+        const lines = text.split("\n");
+        const nonEmpty = [];
+        for (let line of lines) if (line.trim().length) nonEmpty.push(line);
+        if (nonEmpty.length === 0)
+          return { text: "空主题", left: [], right: [] };
+
+        function getIndentLevel(line) {
+          let level = 0;
+          for (let ch of line) {
+            if (ch === " ") level += 1;
+            else if (ch === "\t") level += 2;
+            else break;
+          }
+          return level;
+        }
+
+        function extractText(rawLine) {
+          let trimmed = rawLine.trimStart();
+          let side = null;
+          let content = trimmed;
+          if (content.startsWith("<")) {
+            side = "left";
+            content = content.slice(1).trim();
+          } else if (content.startsWith(">")) {
+            side = "right";
+            content = content.slice(1).trim();
+          }
+          return { text: content, side };
+        }
+
+        const rootInfo = extractText(nonEmpty[0]);
+        const rootNode = { text: rootInfo.text, children: [], side: null };
+        const stack = [{ node: rootNode, indentLevel: 0 }];
+
+        for (let i = 1; i < nonEmpty.length; i++) {
+          const line = nonEmpty[i];
+          const indent = getIndentLevel(line);
+          const { text, side } = extractText(line);
+          const newNode = { text, children: [], side };
+          while (
+            stack.length > 0 &&
+            stack[stack.length - 1].indentLevel >= indent
+          )
+            stack.pop();
+          if (stack.length === 0) rootNode.children.push(newNode);
+          else stack[stack.length - 1].node.children.push(newNode);
+          stack.push({ node: newNode, indentLevel: indent });
+        }
+
+        const result = { text: rootNode.text, left: [], right: [] };
+        const unspecified = [];
+        for (const child of rootNode.children) {
+          if (child.side === "left") result.left.push(child);
+          else if (child.side === "right") result.right.push(child);
+          else unspecified.push(child);
+        }
+        for (const node of unspecified) {
+          if (result.left.length <= result.right.length) result.left.push(node);
+          else result.right.push(node);
+        }
+        const clean = (node) => {
+          delete node.side;
+          node.children.forEach(clean);
+        };
+        [...result.left, ...result.right].forEach(clean);
+        return result;
+      }
+
+      // ===== 全局变量与工具 =====
+      let currentZoom = 1;
+      let isDragging = false,
+        startX,
+        startY,
+        scrollLeft,
+        scrollTop;
+      const editor = document.getElementById("editor");
+      const layoutEl = document.getElementById("mindmap-layout");
+      const svgLayer = document.getElementById("svg-layer");
+      const renderArea = document.getElementById("mindmap-render");
+      const canvasScroll = document.getElementById("canvas-scroll");
+
+      let undoStack = [];
+      let undoIndex = -1;
+      const MAX_UNDO = 50;
+      let lastUndoTime = 0;
+
+      function saveUndoState() {
+        const now = Date.now();
+        if (now - lastUndoTime < 300) return;
+        lastUndoTime = now;
+        undoStack = undoStack.slice(0, undoIndex + 1);
+        undoStack.push(editor.value);
+        if (undoStack.length > MAX_UNDO) undoStack.shift();
+        undoIndex = undoStack.length - 1;
+      }
+      function undo() {
+        if (undoIndex <= 0) {
+          showToast("无更多撤销");
+          return;
+        }
+        undoIndex--;
+        editor.value = undoStack[undoIndex];
+        renderDOM();
+        showToast("已撤销");
+      }
+
+      function createBranch(node, side) {
+        const bE = document.createElement("div");
+        bE.className = `branch ${side}-branch`;
+        const nE = document.createElement("div");
+        nE.className = "node";
+        const inner = document.createElement("span");
+        inner.className = "node-inner";
+        inner.textContent = node.text;
+        nE.appendChild(inner);
+        bE.appendChild(nE);
+        if (node.children && node.children.length) {
+          const cE = document.createElement("div");
+          cE.className = "children";
+          node.children.forEach((c) => cE.appendChild(createBranch(c, side)));
+          bE.appendChild(cE);
+        }
+        return bE;
+      }
+
+      async function renderDOM() {
+        const tree = parseMindmap(editor.value);
+        layoutEl.innerHTML = "";
+        const rootEl = document.createElement("div");
+        rootEl.className = "node root-node";
+        const rootInner = document.createElement("span");
+        rootInner.className = "node-inner";
+        rootInner.textContent = tree.text;
+        rootEl.appendChild(rootInner);
+        rootEl.id = "root-node";
+        const leftCol = document.createElement("div");
+        leftCol.className = "mindmap-left";
+        const rightCol = document.createElement("div");
+        rightCol.className = "mindmap-right";
+        tree.left.forEach((b) => leftCol.appendChild(createBranch(b, "left")));
+        tree.right.forEach((b) =>
+          rightCol.appendChild(createBranch(b, "right")),
+        );
+        layoutEl.appendChild(leftCol);
+        layoutEl.appendChild(rootEl);
+        layoutEl.appendChild(rightCol);
+        await new Promise((r) => requestAnimationFrame(r));
+        drawConnections();
+      }
+
+      function getPos(el) {
+        let x = 0,
+          y = 0,
+          c = el;
+        const rootContainer = document.getElementById("mindmap-render");
+        while (c && c !== rootContainer) {
+          x += c.offsetLeft;
+          y += c.offsetTop;
+          c = c.offsetParent;
+          if (!c || c === document.body) break;
+        }
+        return { x, y, w: el.offsetWidth, h: el.offsetHeight };
+      }
+
+      function drawConnections() {
+        svgLayer.innerHTML = "";
+        const root = document.getElementById("root-node");
+        if (!root) return;
+        const leftGroup = layoutEl.querySelector(".mindmap-left"),
+          rightGroup = layoutEl.querySelector(".mindmap-right");
+        if (!leftGroup || !rightGroup) return;
+        const rootPos = getPos(root),
+          rootMidY = rootPos.y + rootPos.h / 2;
+        const leftNodes = leftGroup.querySelectorAll(
+          ":scope > .branch > .node",
+        );
+        const rightNodes = rightGroup.querySelectorAll(
+          ":scope > .branch > .node",
+        );
+        const ns = "http://www.w3.org/2000/svg";
+        const getLineColor = () =>
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--line-color")
+            .trim() || "#94A3B8";
+        const mkPath = (d) => {
+          const p = document.createElementNS(ns, "path");
+          p.setAttribute("d", d);
+          p.setAttribute("fill", "none");
+          p.setAttribute("stroke", getLineColor());
+          p.setAttribute("stroke-width", "2.2");
+          p.setAttribute("stroke-linecap", "round");
+          svgLayer.appendChild(p);
+        };
+        const mkLine = (x1, y1, x2, y2) => {
+          const l = document.createElementNS(ns, "line");
+          l.setAttribute("x1", x1);
+          l.setAttribute("y1", y1);
+          l.setAttribute("x2", x2);
+          l.setAttribute("y2", y2);
+          l.setAttribute("stroke", getLineColor());
+          l.setAttribute("stroke-width", "2");
+          svgLayer.appendChild(l);
+        };
+        function drawRootBrace(parentX, parentMidY, childNodes, side) {
+          if (!childNodes.length) return;
+          const isRight = side === "right";
+          const gap = 28;
+          const tipX = isRight ? parentX + gap : parentX - gap;
+          const spineX = isRight ? tipX + 20 : tipX - 20;
+          const childPositions = Array.from(childNodes).map((n) => getPos(n));
+          const childCenters = childPositions.map((p) => ({
+            y: p.y + p.h / 2,
+            x: isRight ? p.x : p.x + p.w,
+          }));
+          const topY = Math.min(...childCenters.map((c) => c.y)),
+            bottomY = Math.max(...childCenters.map((c) => c.y));
+          mkLine(parentX, parentMidY, tipX, parentMidY);
+          const dx = isRight ? 1 : -1;
+          const d = `M ${spineX} ${topY} C ${spineX - dx * 12} ${topY}, ${tipX} ${topY + (parentMidY - topY) * 0.4}, ${tipX} ${parentMidY} C ${tipX} ${parentMidY + (bottomY - parentMidY) * 0.4}, ${spineX - dx * 12} ${bottomY}, ${spineX} ${bottomY}`;
+          mkPath(d);
+          childCenters.forEach((c) => mkLine(spineX, c.y, c.x, c.y));
+        }
+        if (leftNodes.length)
+          drawRootBrace(rootPos.x, rootMidY, leftNodes, "left");
+        if (rightNodes.length)
+          drawRootBrace(rootPos.x + rootPos.w, rootMidY, rightNodes, "right");
+        document.querySelectorAll(".branch").forEach((branch) => {
+          const parentNodeDiv = branch.querySelector(":scope > .node");
+          const childrenContainer = branch.querySelector(":scope > .children");
+          if (!parentNodeDiv || !childrenContainer) return;
+          const childNodesList = childrenContainer.querySelectorAll(
+            ":scope > .branch > .node",
+          );
+          if (!childNodesList.length) return;
+          const side = branch.closest(".mindmap-left") ? "left" : "right";
+          const parentPos = getPos(parentNodeDiv);
+          const parentX =
+            side === "right" ? parentPos.x + parentPos.w : parentPos.x;
+          const parentMidY = parentPos.y + parentPos.h / 2;
+          const gap = 24;
+          const tipX = side === "right" ? parentX + gap : parentX - gap;
+          const spineX = side === "right" ? tipX + 18 : tipX - 18;
+          const childPositions = Array.from(childNodesList).map((n) =>
+            getPos(n),
+          );
+          const childCenters = childPositions.map((p) => ({
+            y: p.y + p.h / 2,
+            x: side === "right" ? p.x : p.x + p.w,
+          }));
+          const topY = Math.min(...childCenters.map((c) => c.y)),
+            bottomY = Math.max(...childCenters.map((c) => c.y));
+          mkLine(parentX, parentMidY, tipX, parentMidY);
+          const dx = side === "right" ? 1 : -1;
+          const bracePath = `M ${spineX} ${topY} C ${spineX - dx * 8} ${topY}, ${tipX} ${topY + (parentMidY - topY) * 0.45}, ${tipX} ${parentMidY} C ${tipX} ${parentMidY + (bottomY - parentMidY) * 0.45}, ${spineX - dx * 8} ${bottomY}, ${spineX} ${bottomY}`;
+          mkPath(bracePath);
+          childCenters.forEach((c) => mkLine(spineX, c.y, c.x, c.y));
+        });
+      }
+
+      function autoFit() {
+        const viewW = canvasScroll.clientWidth,
+          viewH = canvasScroll.clientHeight;
+        if (viewW === 0 || viewH === 0) return;
+        renderArea.style.transform = "scale(1)";
+        const padding = 180;
+        const contentW = layoutEl.offsetWidth + padding * 2,
+          contentH = layoutEl.offsetHeight + padding * 2;
+        let scale = Math.min(viewW / contentW, viewH / contentH, 1) * 0.85;
+        scale = Math.max(0.25, Math.min(2, scale));
+        currentZoom = scale;
+        renderArea.style.transform = `scale(${currentZoom})`;
+        document.getElementById("zoom-val").textContent =
+          Math.round(currentZoom * 100) + "%";
+        canvasScroll.scrollLeft = Math.max(
+          0,
+          padding * currentZoom +
+            (layoutEl.offsetWidth * currentZoom) / 2 -
+            viewW / 2,
+        );
+        canvasScroll.scrollTop = Math.max(
+          0,
+          padding * currentZoom +
+            (layoutEl.offsetHeight * currentZoom) / 2 -
+            viewH / 2,
+        );
+      }
+      function setZoom(z) {
+        currentZoom = Math.max(0.2, Math.min(2.5, z));
+        renderArea.style.transform = `scale(${currentZoom})`;
+        document.getElementById("zoom-val").textContent =
+          Math.round(currentZoom * 100) + "%";
+      }
+
+      function getThemeColors() {
+        const isDark = document.documentElement.classList.contains("dark");
+        return {
+          isDark,
+          nodeBg: isDark ? "#1E293B" : "#FFFFFF",
+          nodeBorder: isDark ? "#334155" : "#E2E8F0",
+          nodeColor: isDark ? "#F1F5F9" : "#0F172A",
+          rootBg:
+            getComputedStyle(document.documentElement)
+              .getPropertyValue("--root-bg")
+              .trim() || (isDark ? "#0f766e" : "#0D9488"),
+          lineColor: isDark ? "#94A3B8" : "#94A3B8",
+          shadow: isDark
+            ? "0 1px 3px rgba(0,0,0,0.4)"
+            : "0 1px 3px rgba(0,0,0,0.05)",
+          rootShadow: isDark
+            ? "0 8px 20px rgba(0,0,0,0.5)"
+            : "0 8px 20px rgba(0,0,0,0.1)",
+        };
+      }
+
+      function fixNodeStylesOnClone(clonedEl, colors) {
+        const nodes = clonedEl.querySelectorAll(".node:not(.root-node)");
+        nodes.forEach((node) => {
+          node.style.cssText = "";
+          node.style.display = "inline-block";
+          node.style.verticalAlign = "middle";
+          node.style.padding = "8px 18px";
+          node.style.borderRadius = "10px";
+          node.style.fontSize = "14px";
+          node.style.fontWeight = "500";
+          node.style.lineHeight = "1.35";
+          node.style.whiteSpace = "nowrap";
+          node.style.border = `1.5px solid ${colors.nodeBorder}`;
+          node.style.backgroundColor = colors.nodeBg;
+          node.style.color = colors.nodeColor;
+          node.style.boxShadow = colors.shadow;
+          node.style.textAlign = "center";
+          const inner = node.querySelector(".node-inner");
+          if (inner)
+            inner.style.cssText =
+              "display:inline-block; vertical-align:middle; line-height:1.35;";
+        });
+        const rootNodes = clonedEl.querySelectorAll(".root-node");
+        rootNodes.forEach((node) => {
+          node.style.cssText = "";
+          node.style.display = "inline-block";
+          node.style.verticalAlign = "middle";
+          node.style.padding = "12px 32px";
+          node.style.borderRadius = "40px";
+          node.style.fontSize = "20px";
+          node.style.fontWeight = "800";
+          node.style.lineHeight = "1.3";
+          node.style.backgroundColor = colors.rootBg;
+          node.style.color = "#fff";
+          node.style.border = "none";
+          node.style.boxShadow = colors.rootShadow;
+          node.style.textAlign = "center";
+          const inner = node.querySelector(".node-inner");
+          if (inner)
+            inner.style.cssText =
+              "display:inline-block; vertical-align:middle; line-height:1.3;";
+        });
+      }
+
+      // ========== 完整导出功能 ==========
+      async function exportPNG() {
+        showToast("生成透明背景PNG...");
+        const oldTransform = renderArea.style.transform,
+          oldLeft = canvasScroll.scrollLeft,
+          oldTop = canvasScroll.scrollTop;
+        renderArea.style.transform = "scale(1)";
+        canvasScroll.scrollLeft = 0;
+        canvasScroll.scrollTop = 0;
+        await new Promise((r) => setTimeout(r, 100));
+        drawConnections();
+        document.body.classList.add("transparent-export");
+        renderArea.style.backgroundColor = "transparent";
+        if (canvasScroll.parentElement)
+          canvasScroll.parentElement.style.background = "transparent";
+        try {
+          const colors = getThemeColors();
+          const canvas = await html2canvas(renderArea, {
+            scale: 3,
+            backgroundColor: null,
+            logging: false,
+            onclone: (clonedDoc, clonedEl) =>
+              fixNodeStylesOnClone(clonedEl, colors),
+          });
+          const link = document.createElement("a");
+          link.download = "mindmap_transparent.png";
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+          showToast("PNG 导出成功");
+        } catch (err) {
+          console.error(err);
+          showToast("导出失败");
+        } finally {
+          document.body.classList.remove("transparent-export");
+          renderArea.style.transform = oldTransform;
+          canvasScroll.scrollLeft = oldLeft;
+          canvasScroll.scrollTop = oldTop;
+        }
+      }
+      async function exportJPG() {
+        showToast("生成白底JPG...");
+        const oldTransform = renderArea.style.transform,
+          oldLeft = canvasScroll.scrollLeft,
+          oldTop = canvasScroll.scrollTop;
+        renderArea.style.transform = "scale(1)";
+        canvasScroll.scrollLeft = 0;
+        canvasScroll.scrollTop = 0;
+        await new Promise((r) => setTimeout(r, 100));
+        drawConnections();
+        const oldBg = renderArea.style.backgroundColor,
+          oldWsBg = canvasScroll.parentElement
+            ? canvasScroll.parentElement.style.background
+            : "";
+        renderArea.style.backgroundColor = "#FFFFFF";
+        if (canvasScroll.parentElement)
+          canvasScroll.parentElement.style.background = "#FFFFFF";
+        try {
+          const colors = getThemeColors();
+          const jpgColors = {
+            ...colors,
+            isDark: false,
+            nodeBg: "#FFFFFF",
+            nodeBorder: "#E2E8F0",
+            nodeColor: "#0F172A",
+          };
+          const canvas = await html2canvas(renderArea, {
+            scale: 3,
+            backgroundColor: "#FFFFFF",
+            logging: false,
+            onclone: (clonedDoc, clonedEl) => {
+              clonedEl.style.backgroundColor = "#FFFFFF";
+              clonedEl.style.backgroundImage = "none";
+              fixNodeStylesOnClone(clonedEl, jpgColors);
+            },
+          });
+          const link = document.createElement("a");
+          link.download = "mindmap_white.jpg";
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.click();
+          showToast("JPG 导出成功");
+        } catch (err) {
+          console.error(err);
+          showToast("导出失败");
+        } finally {
+          renderArea.style.backgroundColor = oldBg;
+          if (canvasScroll.parentElement)
+            canvasScroll.parentElement.style.background = oldWsBg;
+          renderArea.style.transform = oldTransform;
+          canvasScroll.scrollLeft = oldLeft;
+          canvasScroll.scrollTop = oldTop;
+        }
+      }
+      async function exportPDF() {
+        showToast("生成PDF文件...");
+        const oldTransform = renderArea.style.transform,
+          oldLeft = canvasScroll.scrollLeft,
+          oldTop = canvasScroll.scrollTop;
+        renderArea.style.transform = "scale(1)";
+        canvasScroll.scrollLeft = 0;
+        canvasScroll.scrollTop = 0;
+        await new Promise((r) => setTimeout(r, 100));
+        drawConnections();
+        const oldBg = renderArea.style.backgroundColor;
+        renderArea.style.backgroundColor = "#FFFFFF";
+        try {
+          const colors = getThemeColors();
+          const pdfColors = {
+            ...colors,
+            isDark: false,
+            nodeBg: "#FFFFFF",
+            nodeBorder: "#E2E8F0",
+            nodeColor: "#0F172A",
+          };
+          const canvas = await html2canvas(renderArea, {
+            scale: 2,
+            backgroundColor: "#FFFFFF",
+            logging: false,
+            onclone: (clonedDoc, clonedEl) => {
+              clonedEl.style.backgroundColor = "#FFFFFF";
+              clonedEl.style.backgroundImage = "none";
+              fixNodeStylesOnClone(clonedEl, pdfColors);
+            },
+          });
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          const imgWidth = canvas.width,
+            imgHeight = canvas.height;
+          const isLandscape = imgWidth > imgHeight;
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF({
+            orientation: isLandscape ? "landscape" : "portrait",
+            unit: "px",
+            format: [imgWidth, imgHeight],
+          });
+          pdf.addImage(imgData, "JPEG", 0, 0, imgWidth, imgHeight);
+          pdf.save("mindmap.pdf");
+          showToast("PDF 导出成功");
+        } catch (err) {
+          console.error(err);
+          showToast("PDF导出失败");
+        } finally {
+          renderArea.style.backgroundColor = oldBg;
+          renderArea.style.transform = oldTransform;
+          canvasScroll.scrollLeft = oldLeft;
+          canvasScroll.scrollTop = oldTop;
+        }
+      }
+      function exportTXT() {
+        const blob = new Blob([editor.value], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mindmap_source.txt";
+        a.click();
+        showToast("TXT已保存");
+      }
+      function exportJSON() {
+        const tree = parseMindmap(editor.value);
+        const blob = new Blob([JSON.stringify(tree, null, 2)], {
+          type: "application/json",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mindmap_data.json";
+        a.click();
+        showToast("JSON导出完成");
+      }
+      function treeToMarkdown(node, depth = 0, isRoot = true) {
+        if (isRoot) {
+          let md = `# ${node.text}\n`;
+          [...(node.left || []), ...(node.right || [])].forEach(
+            (c) => (md += treeToMarkdown(c, 1, false)),
+          );
+          return md;
+        }
+        let md = "  ".repeat(depth) + "- " + node.text + "\n";
+        (node.children || []).forEach(
+          (c) => (md += treeToMarkdown(c, depth + 1, false)),
+        );
+        return md;
+      }
+      function exportMD() {
+        const tree = parseMindmap(editor.value);
+        const blob = new Blob([treeToMarkdown(tree)], {
+          type: "text/markdown",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "mindmap.md";
+        a.click();
+        showToast("Markdown导出成功");
+      }
+      function showToast(msg) {
+        const toast = document.getElementById("toast");
+        toast.textContent = msg;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+      function doIndent() {
+        const textarea = editor;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        if (start === end) {
+          // 单行缩进：在当前行开头加两个空格
+          const value = textarea.value;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const newValue =
+            value.slice(0, lineStart) + "  " + value.slice(lineStart);
+          textarea.value = newValue;
+          const newCursorPos = start + 2;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+        } else {
+          // 多行缩进：每行前面加两个空格
+          const before = textarea.value.substring(0, start);
+          const selected = textarea.value.substring(start, end);
+          const after = textarea.value.substring(end);
+          const lines = selected.split("\n");
+          const indented = lines.map((l) => "  " + l).join("\n");
+          const newValue = before + indented + after;
+          textarea.value = newValue;
+          textarea.setSelectionRange(start, start + indented.length);
+        }
+
+        textarea.focus();
+        renderDOM();
+        saveUndoState();
+      }
+
+      function doOutdent() {
+        const textarea = editor;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        if (start === end) {
+          // 单行反缩进：移除行首的两个空格（或一个tab/一个空格）
+          const value = textarea.value;
+          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+          const lineEnd = value.indexOf("\n", start);
+          const actualLineEnd = lineEnd === -1 ? value.length : lineEnd;
+          const lineText = value.substring(lineStart, actualLineEnd);
+          let trimmedLine = lineText;
+          let removed = 0;
+          if (lineText.startsWith("  ")) {
+            trimmedLine = lineText.slice(2);
+            removed = 2;
+          } else if (lineText.startsWith("\t")) {
+            trimmedLine = lineText.slice(1);
+            removed = 1;
+          } else if (lineText.startsWith(" ")) {
+            trimmedLine = lineText.slice(1);
+            removed = 1;
+          }
+          const newValue =
+            value.slice(0, lineStart) +
+            trimmedLine +
+            value.slice(actualLineEnd);
+          textarea.value = newValue;
+          const newCursorPos = Math.max(lineStart, start - removed);
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+        } else {
+          // 多行反缩进：每行移除前导空格（最多两个空格或一个tab）
+          const before = textarea.value.substring(0, start);
+          const selected = textarea.value.substring(start, end);
+          const after = textarea.value.substring(end);
+          const lines = selected.split("\n");
+          const outdented = lines
+            .map((l) => {
+              if (l.startsWith("  ")) return l.slice(2);
+              if (l.startsWith("\t")) return l.slice(1);
+              if (l.startsWith(" ")) return l.slice(1);
+              return l;
+            })
+            .join("\n");
+          const newValue = before + outdented + after;
+          textarea.value = newValue;
+          textarea.setSelectionRange(start, start + outdented.length);
+        }
+
+        textarea.focus();
+        renderDOM();
+        saveUndoState();
+      }
+      function initResizer() {
+        const resizer = document.getElementById("resizer"),
+          editorPanel = document.getElementById("editor-panel");
+        let isResizing = false;
+        resizer.addEventListener("mousedown", (e) => {
+          isResizing = true;
+          resizer.classList.add("dragging");
+          document.body.style.cursor = "col-resize";
+          e.preventDefault();
+        });
+        document.addEventListener("mousemove", (e) => {
+          if (!isResizing) return;
+          const rect = document
+            .querySelector(".main-container")
+            .getBoundingClientRect();
+          let newWidth = e.clientX - rect.left;
+          newWidth = Math.max(180, Math.min(rect.width * 0.6, newWidth));
+          editorPanel.style.width = newWidth + "px";
+        });
+        document.addEventListener("mouseup", () => {
+          if (isResizing) {
+            isResizing = false;
+            resizer.classList.remove("dragging");
+            document.body.style.cursor = "";
+          }
+        });
+      }
+      function initColorPicker() {
+        const popup = document.getElementById("color-popup"),
+          overlay = document.getElementById("color-overlay"),
+          input = document.getElementById("color-input"),
+          preview = document.getElementById("color-preview"),
+          presetsContainer = document.getElementById("color-presets");
+        const presets = [
+          "#0D9488",
+          "#059669",
+          "#0284C7",
+          "#2563EB",
+          "#7C3AED",
+          "#C026D3",
+          "#E11D48",
+          "#EA580C",
+          "#D97706",
+          "#65A30D",
+          "#1E293B",
+          "#334155",
+          "#64748B",
+          "#F59E0B",
+          "#10B981",
+        ];
+        presets.forEach((c) => {
+          const btn = document.createElement("div");
+          btn.className = "color-preset";
+          btn.style.backgroundColor = c;
+          btn.addEventListener("click", () => {
+            input.value = c;
+            preview.style.backgroundColor = c;
+          });
+          presetsContainer.appendChild(btn);
+        });
+        document.getElementById("btn-color").addEventListener("click", () => {
+          const cur =
+            getComputedStyle(document.documentElement)
+              .getPropertyValue("--root-bg")
+              .trim() || "#0D9488";
+          input.value = cur;
+          preview.style.backgroundColor = cur;
+          popup.classList.add("show");
+          overlay.classList.add("show");
+        });
+        document.getElementById("cp-cancel").addEventListener("click", () => {
+          popup.classList.remove("show");
+          overlay.classList.remove("show");
+        });
+        overlay.addEventListener("click", () => {
+          popup.classList.remove("show");
+          overlay.classList.remove("show");
+        });
+        document.getElementById("cp-reset").addEventListener("click", () => {
+          const isDark = document.documentElement.classList.contains("dark");
+          const def = isDark ? "#0f766e" : "#0D9488";
+          document.documentElement.style.setProperty("--root-bg", def);
+          input.value = def;
+          preview.style.backgroundColor = def;
+          drawConnections();
+          showToast("恢复默认颜色");
+        });
+        document.getElementById("cp-apply").addEventListener("click", () => {
+          let val = input.value.trim();
+          if (!val.startsWith("#")) val = "#" + val;
+          if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+            document.documentElement.style.setProperty("--root-bg", val);
+            drawConnections();
+            popup.classList.remove("show");
+            overlay.classList.remove("show");
+            showToast("标题颜色已更新");
+          } else showToast("请输入有效16进制颜色");
+        });
+      }
+
+      const DEFAULT_TEXT = `生物界
+< 动物界
+    脊索动物门
+      哺乳纲
+        灵长目
+          人科
+            智人
+    节肢动物门
+      昆虫纲
+        鞘翅目
+        鳞翅目
+> 植物界
+    种子植物
+      被子植物
+        双子叶植物
+        单子叶植物
+      裸子植物
+    孢子植物
+      蕨类植物
+> 真菌界
+    酵母菌
+    霉菌
+    大型真菌
+< 原生生物界
+    草履虫
+    变形虫`;
+
+      function initApp() {
+        editor.value = DEFAULT_TEXT;
+        undoStack = [DEFAULT_TEXT];
+        undoIndex = 0;
+        renderDOM();
+        let timer = null;
+        editor.addEventListener("input", () => {
+          renderDOM();
+          clearTimeout(timer);
+          timer = setTimeout(() => saveUndoState(), 400);
+        });
+        editor.addEventListener("keydown", (e) => {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            if (e.shiftKey) doOutdent();
+            else doIndent();
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+            e.preventDefault();
+            undo();
+          }
+        });
+        canvasScroll.addEventListener("mousedown", (e) => {
+          if (e.target.closest(".node")) return;
+          isDragging = true;
+          startX = e.pageX - canvasScroll.offsetLeft;
+          startY = e.pageY - canvasScroll.offsetTop;
+          scrollLeft = canvasScroll.scrollLeft;
+          scrollTop = canvasScroll.scrollTop;
+          canvasScroll.style.cursor = "grabbing";
+        });
+        window.addEventListener("mouseup", () => {
+          isDragging = false;
+          canvasScroll.style.cursor = "grab";
+        });
+        window.addEventListener("mousemove", (e) => {
+          if (!isDragging) return;
+          e.preventDefault();
+          canvasScroll.scrollLeft =
+            scrollLeft - (e.pageX - canvasScroll.offsetLeft - startX);
+          canvasScroll.scrollTop =
+            scrollTop - (e.pageY - canvasScroll.offsetTop - startY);
+        });
+        canvasScroll.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.08 : 0.08;
+            const newZoom = Math.max(0.2, Math.min(2.5, currentZoom + delta));
+            const rect = canvasScroll.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left + canvasScroll.scrollLeft;
+            const mouseY = e.clientY - rect.top + canvasScroll.scrollTop;
+            const ratio = newZoom / currentZoom;
+            currentZoom = newZoom;
+            renderArea.style.transform = `scale(${currentZoom})`;
+            document.getElementById("zoom-val").textContent =
+              Math.round(currentZoom * 100) + "%";
+            canvasScroll.scrollLeft = mouseX * ratio - (e.clientX - rect.left);
+            canvasScroll.scrollTop = mouseY * ratio - (e.clientY - rect.top);
+          },
+          { passive: false },
+        );
+        document
+          .getElementById("zoom-in")
+          .addEventListener("click", () => setZoom(currentZoom + 0.1));
+        document
+          .getElementById("zoom-out")
+          .addEventListener("click", () => setZoom(currentZoom - 0.1));
+        document.getElementById("zoom-fit").addEventListener("click", autoFit);
+        document
+          .getElementById("btn-editor")
+          .addEventListener("click", () =>
+            document
+              .getElementById("editor-panel")
+              .classList.toggle("collapsed"),
+          );
+        document.getElementById("btn-dark").addEventListener("click", () => {
+          document.documentElement.classList.toggle("dark");
+          drawConnections();
+        });
+        document.getElementById("btn-reset").addEventListener("click", () => {
+          editor.value = DEFAULT_TEXT;
+          renderDOM();
+          undoStack = [DEFAULT_TEXT];
+          undoIndex = 0;
+          showToast("已重置");
+        });
+        document.getElementById("btn-png").addEventListener("click", exportPNG);
+        document.getElementById("btn-jpg").addEventListener("click", exportJPG);
+        document.getElementById("btn-pdf").addEventListener("click", exportPDF);
+        document.getElementById("btn-md").addEventListener("click", exportMD);
+        document
+          .getElementById("btn-json")
+          .addEventListener("click", exportJSON);
+        document.getElementById("btn-txt").addEventListener("click", exportTXT);
+        document.getElementById("btn-undo").addEventListener("click", undo);
+        document
+          .getElementById("btn-indent")
+          .addEventListener("click", doIndent);
+        document
+          .getElementById("btn-outdent")
+          .addEventListener("click", doOutdent);
+        initResizer();
+        initColorPicker();
+        window.addEventListener("resize", () => autoFit());
+        setTimeout(() => autoFit(), 200);
+      }
+      initApp();
+    </script>
+  </body>
+</html>
