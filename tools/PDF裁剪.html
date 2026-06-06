@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PDF页面提取器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-surface: #171923;
+    --bg-card: #1e2233;
+    --bg-hover: #262b3e;
+    --fg: #e8eaf0;
+    --fg-muted: #8b90a5;
+    --fg-dim: #5a5f78;
+    --accent: #22d68a;
+    --accent-dim: rgba(34,214,138,0.12);
+    --accent-glow: rgba(34,214,138,0.25);
+    --danger: #f0465a;
+    --danger-dim: rgba(240,70,90,0.12);
+    --warning: #f5a623;
+    --border: #2a2f45;
+    --radius: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%; left: -10%;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(34,214,138,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%; right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(99,102,241,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .app-container {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 48px;
+  }
+  .app-header { text-align: center; margin-bottom: 32px; }
+  .app-header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .app-header h1 .icon-pdf {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; height: 40px;
+    background: var(--accent-dim);
+    border-radius: 10px;
+    color: var(--accent);
+    font-size: 18px;
+  }
+  .app-header p { color: var(--fg-muted); font-size: 14px; margin-top: 6px; }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: #353a54; }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title i { font-size: 14px; color: var(--accent); }
+  .file-drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: rgba(34,214,138,0.02);
+  }
+  .file-drop-zone:hover, .file-drop-zone.drag-over {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .file-drop-zone .icon-upload {
+    font-size: 32px;
+    color: var(--fg-dim);
+    margin-bottom: 10px;
+    transition: color 0.25s, transform 0.25s;
+  }
+  .file-drop-zone:hover .icon-upload { color: var(--accent); transform: translateY(-3px); }
+  .file-drop-zone p { color: var(--fg-muted); font-size: 14px; }
+  .file-drop-zone .hint { font-size: 12px; color: var(--fg-dim); margin-top: 4px; }
+  .file-info-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(34,214,138,0.2);
+    border-radius: var(--radius);
+    margin-top: 12px;
+  }
+  .file-info-bar.show { display: flex; }
+  .file-info-bar .file-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .file-info-bar .file-details { flex: 1; min-width: 0; }
+  .file-info-bar .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .file-info-bar .file-meta { font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
+  .file-info-bar .btn-remove {
+    background: none; border: none; color: var(--fg-dim);
+    cursor: pointer; font-size: 16px; padding: 4px;
+    transition: color 0.2s;
+  }
+  .file-info-bar .btn-remove:hover { color: var(--danger); }
+
+  /* 页面选择区 */
+  .page-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .page-controls label { font-size: 13px; color: var(--fg-muted); font-weight: 500; }
+  .drag-hint {
+    font-size: 12px;
+    color: var(--fg-dim);
+    background: rgba(34,214,138,0.06);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(34,214,138,0.12);
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .drag-hint i { color: var(--accent); font-size: 11px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: #454a68; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-accent {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0f1117;
+    font-weight: 700;
+  }
+  .btn-accent:hover {
+    background: #1ec77d;
+    border-color: #1ec77d;
+    box-shadow: 0 4px 20px var(--accent-glow);
+  }
+  .btn-accent:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .page-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .page-input-group input {
+    width: 200px;
+    padding: 7px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .page-input-group input::placeholder { color: var(--fg-dim); }
+  .page-input-group input:focus { border-color: var(--accent); }
+
+  /* 页面网格 - 可拖选 */
+  .pages-grid-wrapper {
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-surface);
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .pages-grid-wrapper.is-dragging {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-dim);
+  }
+  .pages-grid-wrapper::-webkit-scrollbar { width: 6px; }
+  .pages-grid-wrapper::-webkit-scrollbar-track { background: transparent; }
+  .pages-grid-wrapper::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 3px; }
+
+  .pages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 6px;
+  }
+
+  .page-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .page-cell:hover { border-color: #454a68; background: var(--bg-hover); }
+  .page-cell.selected {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .page-cell.selected::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 3px; right: 5px;
+    font-size: 8px;
+    color: var(--accent);
+  }
+  .page-cell.drag-enter {
+    border-color: var(--accent);
+    background: rgba(34,214,138,0.18);
+    transform: scale(1.04);
+  }
+  .page-cell.drag-leave-unselected {
+    border-color: rgba(240,70,90,0.5);
+    background: var(--danger-dim);
+  }
+  .page-cell .page-num {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--fg);
+    transition: color 0.15s;
+    pointer-events: none;
+  }
+  .page-cell.selected .page-num { color: var(--accent); }
+  .page-cell .page-label {
+    font-size: 10px;
+    color: var(--fg-dim);
+    margin-top: 2px;
+    pointer-events: none;
+  }
+
+  /* 拖选浮动指示器 */
+  .drag-indicator {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    padding: 5px 12px;
+    background: var(--accent);
+    color: #0f1117;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 20px;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .drag-indicator.visible { opacity: 1; }
+
+  .empty-pages {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--fg-dim);
+    font-size: 14px;
+  }
+  .empty-pages i { font-size: 28px; margin-bottom: 10px; display: block; }
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .stats-bar .selected-count { color: var(--accent); font-weight: 600; }
+  .stats-bar .total-count { color: var(--fg-dim); }
+
+  /* 保存设置 */
+  .save-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .save-row:last-child { margin-bottom: 0; }
+  .save-row label {
+    font-size: 13px;
+    color: var(--fg-muted);
+    font-weight: 500;
+    flex-shrink: 0;
+    width: 70px;
+  }
+  .save-row input, .save-row select {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg-surface);
+    color: var(--fg);
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .save-row input:focus, .save-row select:focus { border-color: var(--accent); }
+  .save-row select { flex: 0 0 180px; cursor: pointer; }
+  .save-row .btn { flex-shrink: 0; }
+  .preview-bar {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(34,214,138,0.06);
+    border: 1px solid rgba(34,214,138,0.15);
+    border-radius: 7px;
+    font-size: 13px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .preview-bar.warning { color: var(--warning); background: rgba(245,166,35,0.06); border-color: rgba(245,166,35,0.15); }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .log-area {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    height: 160px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--fg-muted);
+  }
+  .log-area::-webkit-scrollbar { width: 5px; }
+  .log-area::-webkit-scrollbar-track { background: transparent; }
+  .log-area::-webkit-scrollbar-thumb { background: var(--fg-dim); border-radius: 3px; }
+  .log-area .log-success { color: var(--accent); }
+  .log-area .log-error { color: var(--danger); }
+  .log-area .log-info { color: var(--fg-muted); }
+
+  .progress-bar-wrapper { display: none; margin-top: 10px; }
+  .progress-bar-wrapper.show { display: block; }
+  .progress-track {
+    width: 100%; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .progress-text { font-size: 12px; color: var(--fg-dim); margin-top: 4px; text-align: center; }
+
+  .toast-container {
+    position: fixed;
+    top: 20px; right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .toast {
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    animation: toastIn 0.3s ease;
+    max-width: 360px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.success { background: #1a7a4a; }
+  .toast.error { background: #a12d3a; }
+  .toast.warning { background: #9a6b15; }
+  .toast.info { background: #2a4a7f; }
+  .toast.fade-out { animation: toastOut 0.3s ease forwards; }
+  @keyframes toastIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+  @keyframes toastOut { from { opacity:1; transform: translateX(0); } to { opacity:0; transform: translateX(40px); } }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 8000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; animation: fadeIn 0.2s; }
+  .modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 420px;
+    width: 90%;
+    animation: modalIn 0.25s ease;
+  }
+  .modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .modal-box p { font-size: 13px; color: var(--fg-muted); line-height: 1.6; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes modalIn { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+  @media (max-width: 640px) {
+    .app-container { padding: 20px 12px 32px; }
+    .app-header h1 { font-size: 22px; }
+    .page-controls { flex-direction: column; align-items: flex-start; }
+    .drag-hint { margin-left: 0; }
+    .page-input-group { width: 100%; }
+    .page-input-group input { flex: 1; width: auto; }
+    .save-row { flex-wrap: wrap; }
+    .save-row select { flex: 1; }
+    .pages-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+    .action-bar { flex-direction: column; }
+    .action-bar > div { width: 100%; display: flex; gap: 8px; }
+    .action-bar .btn-accent { flex: 1; justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">确认</h3>
+    <p id="modalMessage"></p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<!-- 拖选浮动指示器 -->
+<div class="drag-indicator" id="dragIndicator"></div>
+
+<div class="app-container">
+  <header class="app-header">
+    <h1>
+      <span class="icon-pdf"><i class="fas fa-file-pdf"></i></span>
+      PDF页面提取器
+    </h1>
+    <p>选择PDF文件，拖动快速选择页面，保存为单独的PDF文件</p>
+  </header>
+
+  <section class="card">
+    <div class="card-title"><i class="fas fa-folder-open"></i> PDF文件</div>
+    <div class="file-drop-zone" id="dropZone" role="button" tabindex="0" aria-label="点击或拖拽选择PDF文件">
+      <div class="icon-upload"><i class="fas fa-cloud-arrow-up"></i></div>
+      <p>点击选择或拖拽PDF文件到此处</p>
+      <p class="hint">仅支持 .pdf 格式</p>
+    </div>
+    <input type="file" id="fileInput" accept=".pdf" style="display:none">
+    <div class="file-info-bar" id="fileInfoBar">
+      <div class="file-icon"><i class="fas fa-file-pdf"></i></div>
+      <div class="file-details">
+        <div class="file-name" id="fileName">-</div>
+        <div class="file-meta" id="fileMeta">-</div>
+      </div>
+      <button class="btn-remove" id="btnRemoveFile" aria-label="移除文件"><i class="fas fa-xmark"></i></button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><i class="fas fa-list-check"></i> 选择要提取的页面</div>
+    <div class="page-controls">
+      <label>快速选择:</label>
+      <button class="btn btn-sm" id="btnSelectAll"><i class="fas fa-check-double"></i> 全选</button>
+      <button class="btn btn-sm" id="btnDeselectAll"><i class="fas fa-xmark"></i> 全不选</button>
+      <button class="btn btn-sm" id="btnSelectOdd">奇数页</button>
+      <button class="btn btn-sm" id="btnSelectEven">偶数页</button>
+      <button class="btn btn-sm" id="btnInvert">反选</button>
+      <div class="page-input-group">
+        <input type="text" id="pageInput" placeholder="1,3,5 或 1-5,8-10" aria-label="输入页码范围">
+        <button class="btn btn-sm" id="btnApplyInput">应用</button>
+      </div>
+      <span class="drag-hint"><i class="fas fa-hand-pointer"></i> 按住拖动快速选择</span>
+    </div>
+    <div class="pages-grid-wrapper" id="pagesWrapper">
+      <div class="empty-pages" id="emptyPages">
+        <i class="fas fa-inbox"></i>
+        请先选择PDF文件
+      </div>
+      <div class="pages-grid" id="pagesGrid" style="display:none;"></div>
+    </div>
+    <div class="stats-bar" id="statsBar" style="display:none;">
+      <span class="selected-count" id="selectedCount">已选择 0 页</span>
+      <span class="total-count" id="totalCount">共 0 页</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><i class="fas fa-floppy-disk"></i> 保存设置</div>
+    <div class="save-row">
+      <label>保存位置</label>
+      <input type="text" id="savePathInput" value="浏览器下载目录" readonly>
+      <button class="btn" id="btnBrowse"><i class="fas fa-folder-tree"></i> 浏览</button>
+    </div>
+    <div class="save-row">
+      <label>文件名</label>
+      <input type="text" id="filenameInput" placeholder="输入文件名" value="提取的页面">
+      <select id="formatSelect">
+        <option value=".pdf">.pdf</option>
+        <option value="_提取版.pdf">_提取版.pdf</option>
+        <option value="_精简版.pdf">_精简版.pdf</option>
+        <option value="_选中的页面.pdf">_选中的页面.pdf</option>
+      </select>
+    </div>
+    <div class="preview-bar" id="previewBar">
+      <i class="fas fa-arrow-right"></i>
+      <span id="previewText">请选择PDF文件</span>
+    </div>
+    <div class="progress-bar-wrapper" id="progressWrapper">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">处理中...</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="action-bar">
+      <div>
+        <button class="btn" id="btnOpenDir"><i class="fas fa-folder-open"></i> 打开保存位置</button>
+      </div>
+      <div>
+        <button class="btn" id="btnReset"><i class="fas fa-rotate-left"></i> 重置</button>
+        <button class="btn btn-accent" id="btnSave" disabled><i class="fas fa-download"></i> 保存</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><i class="fas fa-terminal"></i> 操作日志</div>
+    <div class="log-area" id="logArea" role="log" aria-live="polite"></div>
+  </section>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== 应用状态 =====
+  const state = {
+    pdfBytes: null,
+    pdfDoc: null,
+    fileName: '',
+    fileSize: 0,
+    totalPages: 0,
+    selectedPages: new Set(),
+    saveDir: '',
+  };
+
+  // ===== 拖选状态 =====
+  const drag = {
+    active: false,        // 是否正在拖选
+    startPage: null,      // 起始页码(1-based)
+    lastAppliedPage: null,// 上次应用拖选的页码
+    mode: 'select',       // 'select' 或 'deselect'
+    visitedCells: new Set(), // 拖选过程中经过的cell，用于清理临时样式
+  };
+
+  // ===== DOM 引用 =====
+  const $ = (sel) => document.querySelector(sel);
+  const dropZone = $('#dropZone');
+  const fileInput = $('#fileInput');
+  const fileInfoBar = $('#fileInfoBar');
+  const fileNameEl = $('#fileName');
+  const fileMetaEl = $('#fileMeta');
+  const pagesWrapper = $('#pagesWrapper');
+  const pagesGrid = $('#pagesGrid');
+  const emptyPages = $('#emptyPages');
+  const statsBar = $('#statsBar');
+  const selectedCountEl = $('#selectedCount');
+  const totalCountEl = $('#totalCount');
+  const pageInput = $('#pageInput');
+  const filenameInput = $('#filenameInput');
+  const formatSelect = $('#formatSelect');
+  const previewBar = $('#previewBar');
+  const previewText = $('#previewText');
+  const progressWrapper = $('#progressWrapper');
+  const progressFill = $('#progressFill');
+  const progressTextEl = $('#progressText');
+  const logArea = $('#logArea');
+  const btnSave = $('#btnSave');
+  const toastContainer = $('#toastContainer');
+  const dragIndicator = $('#dragIndicator');
+
+  // ===== Toast =====
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = { success:'fa-check-circle', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
+    toast.innerHTML = `<i class="fas ${icons[type]||icons.info}"></i> ${message}`;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // ===== 确认对话框 =====
+  function showModal(title, message, actions) {
+    return new Promise((resolve) => {
+      const overlay = $('#modalOverlay');
+      $('#modalTitle').textContent = title;
+      $('#modalMessage').textContent = message;
+      const el = $('#modalActions');
+      el.innerHTML = '';
+      actions.forEach(({ label, value, className }) => {
+        const btn = document.createElement('button');
+        btn.className = className || 'btn';
+        btn.textContent = label;
+        btn.onclick = () => { overlay.classList.remove('show'); resolve(value); };
+        el.appendChild(btn);
+      });
+      overlay.classList.add('show');
+    });
+  }
+
+  // ===== 日志 =====
+  function log(message, type = 'info') {
+    const cls = { success:'log-success', error:'log-error', info:'log-info' };
+    const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    const line = document.createElement('div');
+    line.className = cls[type] || 'log-info';
+    line.textContent = `[${time}] ${message}`;
+    logArea.appendChild(line);
+    logArea.scrollTop = logArea.scrollHeight;
+  }
+
+  // ===== 文件选择 =====
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('keydown', (e) => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); fileInput.click(); } });
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+  });
+  $('#btnRemoveFile').addEventListener('click', removeFile);
+
+  async function handleFile(file) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
+      showToast('请选择PDF格式的文件', 'error');
+      return;
+    }
+    try {
+      log('正在加载文件...');
+      const buffer = await file.arrayBuffer();
+      state.pdfBytes = new Uint8Array(buffer);
+      state.fileName = file.name;
+      state.fileSize = file.size;
+      state.pdfDoc = await PDFLib.PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
+      state.totalPages = state.pdfDoc.getPageCount();
+      state.selectedPages.clear();
+
+      fileNameEl.textContent = state.fileName;
+      fileMetaEl.textContent = `${state.totalPages} 页 | ${(state.fileSize/1024).toFixed(1)} KB`;
+      fileInfoBar.classList.add('show');
+      dropZone.style.display = 'none';
+
+      filenameInput.value = state.fileName.replace(/\.pdf$/i, '') + '_提取版';
+      createPagesGrid();
+      updateStats();
+      updatePreview();
+      updateSaveButton();
+      log(`已加载: ${state.fileName} (${state.totalPages}页)`, 'success');
+    } catch (err) {
+      showToast('无法加载PDF文件: ' + err.message, 'error');
+      log('加载失败: ' + err.message, 'error');
+    }
+  }
+
+  function removeFile() {
+    state.pdfBytes = null;
+    state.pdfDoc = null;
+    state.fileName = '';
+    state.fileSize = 0;
+    state.totalPages = 0;
+    state.selectedPages.clear();
+    fileInfoBar.classList.remove('show');
+    dropZone.style.display = '';
+    pagesGrid.style.display = 'none';
+    pagesGrid.innerHTML = '';
+    emptyPages.style.display = '';
+    statsBar.style.display = 'none';
+    fileInput.value = '';
+    filenameInput.value = '提取的页面';
+    updatePreview();
+    updateSaveButton();
+    log('已移除文件', 'info');
+  }
+
+  // ===== 创建页面网格 =====
+  function createPagesGrid() {
+    pagesGrid.innerHTML = '';
+    emptyPages.style.display = 'none';
+    pagesGrid.style.display = 'grid';
+    statsBar.style.display = 'flex';
+
+    for (let i = 1; i <= state.totalPages; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'page-cell';
+      cell.dataset.page = i;
+      cell.setAttribute('role', 'checkbox');
+      cell.setAttribute('aria-checked', 'false');
+      cell.setAttribute('tabindex', '0');
+      cell.innerHTML = `<span class="page-num">${i}</span><span class="page-label">第${i}页</span>`;
+
+      // 键盘操作（非拖选时）
+      cell.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          togglePage(i);
+        }
+      });
+
+      pagesGrid.appendChild(cell);
+    }
+  }
+
+  // ===== 单击切换 =====
+  function togglePage(pageNum) {
+    if (state.selectedPages.has(pageNum)) {
+      state.selectedPages.delete(pageNum);
+    } else {
+      state.selectedPages.add(pageNum);
+    }
+    updatePageCellUI(pageNum);
+    updateStats();
+    updatePreview();
+    updateSaveButton();
+  }
+
+  function updatePageCellUI(pageNum) {
+    const cell = pagesGrid.querySelector(`[data-page="${pageNum}"]`);
+    if (!cell) return;
+    const sel = state.selectedPages.has(pageNum);
+    cell.classList.toggle('selected', sel);
+    cell.setAttribute('aria-checked', String(sel));
+  }
+
+  function updateAllCellsUI() {
+    for (let i = 1; i <= state.totalPages; i++) updatePageCellUI(i);
+  }
+
+  // ===== 拖选逻辑核心 =====
+  // 根据起始页和当前页，确定需要选中/取消的页码范围
+  function getPageRange(start, end) {
+    const lo = Math.min(start, end);
+    const hi = Math.max(start, end);
+    const pages = [];
+    for (let i = lo; i <= hi; i++) pages.push(i);
+    return pages;
+  }
+
+  // 应用拖选：根据mode选中或取消范围内的页面
+  function applyDragSelect(fromPage, toPage) {
+    const range = getPageRange(fromPage, toPage);
+    if (drag.mode === 'select') {
+      range.forEach(p => state.selectedPages.add(p));
+    } else {
+      range.forEach(p => state.selectedPages.delete(p));
+    }
+    updateAllCellsUI();
+    updateStats();
+    updatePreview();
+    updateSaveButton();
+  }
+
+  // 清理拖选临时样式
+  function clearDragTempStyles() {
+    drag.visitedCells.forEach(pageNum => {
+      const cell = pagesGrid.querySelector(`[data-page="${pageNum}"]`);
+      if (cell) {
+        cell.classList.remove('drag-enter', 'drag-leave-unselected');
+      }
+    });
+    drag.visitedCells.clear();
+  }
+
+  // 获取鼠标所在位置对应的页码
+  function getPageFromEvent(e) {
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    if (!el) return null;
+    const cell = el.closest('.page-cell');
+    if (!cell) return null;
+    return parseInt(cell.dataset.page, 10);
+  }
+
+  // 显示/更新拖选指示器
+  function showDragIndicator(e, fromPage, toPage) {
+    const range = getPageRange(fromPage, toPage);
+    const count = range.length;
+    const start = Math.min(fromPage, toPage);
+    const end = Math.max(fromPage, toPage);
+
+    let text = '';
+    if (start === end) {
+      text = `${drag.mode === 'select' ? '选中' : '取消'} 第${start}页`;
+    } else {
+      text = `${drag.mode === 'select' ? '选中' : '取消'} ${start}-${end} (共${count}页)`;
+    }
+    dragIndicator.textContent = text;
+    dragIndicator.style.left = (e.clientX + 16) + 'px';
+    dragIndicator.style.top = (e.clientY - 36) + 'px';
+    dragIndicator.classList.add('visible');
+  }
+
+  function hideDragIndicator() {
+    dragIndicator.classList.remove('visible');
+  }
+
+  // mousedown - 开始拖选
+  pagesWrapper.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return; // 只响应左键
+    const pageNum = getPageFromEvent(e);
+    if (pageNum === null) return;
+
+    e.preventDefault(); // 阻止文本选择
+
+    drag.active = true;
+    drag.startPage = pageNum;
+    drag.lastAppliedPage = pageNum;
+
+    // 判断模式：如果起始页已选中，则拖选=取消；否则=选中
+    drag.mode = state.selectedPages.has(pageNum) ? 'deselect' : 'select';
+
+    // 立即应用起始页
+    if (drag.mode === 'select') {
+      state.selectedPages.add(pageNum);
+    } else {
+      state.selectedPages.delete(pageNum);
+    }
+    updatePageCellUI(pageNum);
+    updateStats();
+    updatePreview();
+    updateSaveButton();
+
+    pagesWrapper.classList.add('is-dragging');
+    showDragIndicator(e, pageNum, pageNum);
+  });
+
+  // mousemove - 拖选中
+  document.addEventListener('mousemove', (e) => {
+    if (!drag.active) return;
+
+    const pageNum = getPageFromEvent(e);
+    if (pageNum === null) {
+      // 鼠标不在任何cell上，保持之前状态
+      hideDragIndicator();
+      clearDragTempStyles();
+      return;
+    }
+
+    if (pageNum === drag.lastAppliedPage) {
+      // 还在同一个cell上，只更新指示器位置
+      showDragIndicator(e, drag.startPage, pageNum);
+      // 给当前cell加高亮
+      clearDragTempStyles();
+      const cell = pagesGrid.querySelector(`[data-page="${pageNum}"]`);
+      if (cell) {
+        cell.classList.add('drag-enter');
+        drag.visitedCells.add(pageNum);
+      }
+      return;
+    }
+
+    // 移到了新cell，应用从起始到当前的整个范围
+    applyDragSelect(drag.startPage, pageNum);
+    drag.lastAppliedPage = pageNum;
+
+    // 更新临时高亮样式
+    clearDragTempStyles();
+    const range = getPageRange(drag.startPage, pageNum);
+    range.forEach(p => {
+      const cell = pagesGrid.querySelector(`[data-page="${p}"]`);
+      if (cell) {
+        cell.classList.add('drag-enter');
+        drag.visitedCells.add(p);
+      }
+    });
+
+    // 确保滚动区域跟随鼠标
+    autoScrollOnDrag(e);
+
+    showDragIndicator(e, drag.startPage, pageNum);
+  });
+
+  // mouseup - 结束拖选
+  document.addEventListener('mouseup', (e) => {
+    if (!drag.active) return;
+    drag.active = false;
+    drag.startPage = null;
+    drag.lastAppliedPage = null;
+    pagesWrapper.classList.remove('is-dragging');
+    clearDragTempStyles();
+    hideDragIndicator();
+  });
+
+  // 拖选时自动滚动
+  function autoScrollOnDrag(e) {
+    const rect = pagesWrapper.getBoundingClientRect();
+    const edgeSize = 50;
+    const scrollSpeed = 8;
+
+    if (e.clientY < rect.top + edgeSize) {
+      // 靠近顶部，向上滚
+      pagesWrapper.scrollTop -= scrollSpeed;
+    } else if (e.clientY > rect.bottom - edgeSize) {
+      // 靠近底部，向下滚
+      pagesWrapper.scrollTop += scrollSpeed;
+    }
+  }
+
+  // ===== 触摸设备拖选支持 =====
+  pagesWrapper.addEventListener('touchstart', (e) => {
+    const touch = e.touches[0];
+    const pageNum = getPageFromTouch(touch);
+    if (pageNum === null) return;
+
+    drag.active = true;
+    drag.startPage = pageNum;
+    drag.lastAppliedPage = pageNum;
+    drag.mode = state.selectedPages.has(pageNum) ? 'deselect' : 'select';
+
+    if (drag.mode === 'select') {
+      state.selectedPages.add(pageNum);
+    } else {
+      state.selectedPages.delete(pageNum);
+    }
+    updatePageCellUI(pageNum);
+    updateStats();
+    updatePreview();
+    updateSaveButton();
+    pagesWrapper.classList.add('is-dragging');
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!drag.active) return;
+    const touch = e.touches[0];
+    const pageNum = getPageFromTouch(touch);
+    if (pageNum === null || pageNum === drag.lastAppliedPage) return;
+
+    applyDragSelect(drag.startPage, pageNum);
+    drag.lastAppliedPage = pageNum;
+    autoScrollOnTouch(touch);
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!drag.active) return;
+    drag.active = false;
+    drag.startPage = null;
+    drag.lastAppliedPage = null;
+    pagesWrapper.classList.remove('is-dragging');
+  });
+
+  function getPageFromTouch(touch) {
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!el) return null;
+    const cell = el.closest('.page-cell');
+    if (!cell) return null;
+    return parseInt(cell.dataset.page, 10);
+  }
+
+  function autoScrollOnTouch(touch) {
+    const rect = pagesWrapper.getBoundingClientRect();
+    const edgeSize = 50;
+    if (touch.clientY < rect.top + edgeSize) {
+      pagesWrapper.scrollTop -= 8;
+    } else if (touch.clientY > rect.bottom - edgeSize) {
+      pagesWrapper.scrollTop += 8;
+    }
+  }
+
+  // 阻止页面网格内的默认拖拽行为
+  pagesWrapper.addEventListener('dragstart', (e) => e.preventDefault());
+
+  // ===== 快速选择按钮 =====
+  $('#btnSelectAll').addEventListener('click', () => {
+    if (!state.pdfDoc) return;
+    for (let i = 1; i <= state.totalPages; i++) state.selectedPages.add(i);
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+    log('已选择全部页面', 'info');
+  });
+
+  $('#btnDeselectAll').addEventListener('click', () => {
+    state.selectedPages.clear();
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+  });
+
+  $('#btnSelectOdd').addEventListener('click', () => {
+    if (!state.pdfDoc) return;
+    state.selectedPages.clear();
+    for (let i = 1; i <= state.totalPages; i++) { if (i%2===1) state.selectedPages.add(i); }
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+    log('已选择奇数页', 'info');
+  });
+
+  $('#btnSelectEven').addEventListener('click', () => {
+    if (!state.pdfDoc) return;
+    state.selectedPages.clear();
+    for (let i = 1; i <= state.totalPages; i++) { if (i%2===0) state.selectedPages.add(i); }
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+    log('已选择偶数页', 'info');
+  });
+
+  $('#btnInvert').addEventListener('click', () => {
+    if (!state.pdfDoc) return;
+    const newSet = new Set();
+    for (let i = 1; i <= state.totalPages; i++) {
+      if (!state.selectedPages.has(i)) newSet.add(i);
+    }
+    state.selectedPages = newSet;
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+    log('已反选', 'info');
+  });
+
+  // ===== 页码输入 =====
+  $('#btnApplyInput').addEventListener('click', applyPageInput);
+  pageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyPageInput(); });
+
+  function applyPageInput() {
+    if (!state.pdfDoc) { showToast('请先选择PDF文件', 'warning'); return; }
+    const raw = pageInput.value.trim();
+    if (!raw) return;
+    const pages = parsePageInput(raw);
+    if (pages === null) {
+      showToast('格式错误，请输入如: 1,3,5 或 1-5,8-10', 'warning');
+      return;
+    }
+    state.selectedPages.clear();
+    pages.forEach(p => { if (p >= 1 && p <= state.totalPages) state.selectedPages.add(p); });
+    updateAllCellsUI(); updateStats(); updatePreview(); updateSaveButton();
+    log(`已应用页码选择: ${raw}`, 'info');
+  }
+
+  function parsePageInput(str) {
+    str = str.replace(/，/g, ',').replace(/；/g, ';');
+    const pages = new Set();
+    const parts = str.split(',');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      if (trimmed.includes('-')) {
+        const segs = trimmed.split('-');
+        if (segs.length !== 2) return null;
+        const a = parseInt(segs[0], 10), b = parseInt(segs[1], 10);
+        if (isNaN(a) || isNaN(b)) return null;
+        const lo = Math.min(a, b), hi = Math.max(a, b);
+        for (let i = lo; i <= hi; i++) pages.add(i);
+      } else {
+        const n = parseInt(trimmed, 10);
+        if (isNaN(n)) return null;
+        pages.add(n);
+      }
+    }
+    return Array.from(pages).sort((a, b) => a - b);
+  }
+
+  // ===== 统计 =====
+  function updateStats() {
+    selectedCountEl.textContent = `已选择 ${state.selectedPages.size} 页`;
+    totalCountEl.textContent = `共 ${state.totalPages} 页`;
+  }
+
+  // ===== 保存设置 =====
+  savePathInput.value = '浏览器下载目录';
+  $('#btnBrowse').addEventListener('click', async () => {
+    if ('showDirectoryPicker' in window) {
+      try {
+        const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+        state.saveDir = dirHandle.name;
+        savePathInput.value = dirHandle.name + ' (浏览器目录访问)';
+        log(`保存位置: ${dirHandle.name}`, 'info');
+      } catch (e) {
+        if (e.name !== 'AbortError') showToast('文件将保存到浏览器默认下载位置', 'info');
+      }
+    } else {
+      showToast('当前浏览器不支持目录选择，文件将保存到浏览器默认下载位置', 'info');
+    }
+  });
+
+  filenameInput.addEventListener('input', updatePreview);
+  formatSelect.addEventListener('change', updatePreview);
+
+  function updatePreview() {
+    const fn = filenameInput.value.trim();
+    const fmt = formatSelect.value;
+    if (!state.pdfDoc) {
+      previewText.textContent = '请选择PDF文件';
+      previewBar.classList.remove('warning');
+      return;
+    }
+    if (!fn) {
+      previewText.textContent = '请输入文件名';
+      previewBar.classList.add('warning');
+      return;
+    }
+    previewText.textContent = fn + fmt;
+    previewBar.classList.remove('warning');
+  }
+
+  function updateSaveButton() {
+    btnSave.disabled = !state.pdfDoc || state.selectedPages.size === 0;
+  }
+
+  // ===== 保存PDF =====
+  btnSave.addEventListener('click', saveSelectedPages);
+
+  async function saveSelectedPages() {
+    if (!state.pdfDoc || state.selectedPages.size === 0) return;
+    const fullFilename = (filenameInput.value.trim()) + formatSelect.value;
+    if (!filenameInput.value.trim()) { showToast('请输入文件名', 'warning'); return; }
+
+    btnSave.disabled = true;
+    progressWrapper.classList.add('show');
+    progressFill.style.width = '0%';
+    progressTextEl.textContent = '正在处理...';
+    log(`正在保存 ${state.selectedPages.size} 个页面到: ${fullFilename}`, 'info');
+
+    try {
+      const newDoc = await PDFLib.PDFDocument.create();
+      const sorted = Array.from(state.selectedPages).sort((a, b) => a - b);
+      const indices = sorted.map(p => p - 1);
+      const copied = await newDoc.copyPages(state.pdfDoc, indices);
+      copied.forEach((page, idx) => {
+        newDoc.addPage(page);
+        progressFill.style.width = Math.round(((idx+1)/sorted.length)*90) + '%';
+        progressTextEl.textContent = `复制页面 ${idx+1}/${sorted.length}`;
+      });
+
+      progressFill.style.width = '95%';
+      progressTextEl.textContent = '生成文件...';
+      const newBytes = await newDoc.save();
+      const blob = new Blob([newBytes], { type: 'application/pdf' });
+
+      progressFill.style.width = '100%';
+      progressTextEl.textContent = '完成';
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fullFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      const sizeKB = (newBytes.length / 1024).toFixed(1);
+      log(`保存成功！${fullFilename} | ${sizeKB} KB | ${sorted.length} 页`, 'success');
+      showToast(`已保存: ${fullFilename} (${sizeKB} KB)`, 'success');
+    } catch (err) {
+      log('保存失败: ' + err.message, 'error');
+      showToast('保存失败: ' + err.message, 'error');
+    } finally {
+      setTimeout(() => { progressWrapper.classList.remove('show'); updateSaveButton(); }, 800);
+    }
+  }
+
+  // ===== 其他按钮 =====
+  $('#btnOpenDir').addEventListener('click', () => {
+    showToast('文件保存在浏览器默认下载目录中', 'info');
+  });
+
+  $('#btnReset').addEventListener('click', () => {
+    if (!state.pdfDoc) return;
+    state.selectedPages.clear();
+    updateAllCellsUI(); updateStats();
+    filenameInput.value = state.fileName.replace(/\.pdf$/i, '') + '_提取版';
+    updatePreview(); updateSaveButton();
+    log('已重置页面选择和文件名', 'info');
+  });
+
+  // ===== 初始化 =====
+  log('PDF页面提取器已就绪', 'info');
+  log('提示：在页面网格上按住鼠标拖动可快速选择连续页面', 'info');
+  log('所有操作均在本地浏览器中完成，不会上传文件', 'info');
+
+})();
+</script>
+</body>
+</html>
