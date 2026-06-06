@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 代码生成提示词模板汇总</title>
+    <style>
+        :root {
+            --bg-color: #f9fafb;
+            --content-bg: #ffffff;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --accent-color: #3b82f6;
+            --code-bg: #f3f4f6;
+            --code-inline-color: #dc2626;
+            --list-marker-color: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.7;
+            padding: 1rem;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--content-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #111827;
+        }
+
+        .author {
+            color: var(--list-marker-color);
+            font-size: 0.9rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        section:last-child {
+            margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+            display: inline-block;
+        }
+
+        .intro {
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        ol {
+            padding-left: 1.5rem;
+            list-style: none;
+            counter-reset: item;
+        }
+
+        ol > li {
+            counter-increment: item;
+            margin-bottom: 1rem;
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        ol > li::before {
+            content: counter(item) ".";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        ul {
+            padding-left: 2rem;
+            margin-top: 0.5rem;
+            list-style-type: disc;
+        }
+
+        ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--code-bg);
+            color: var(--code-inline-color);
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .footnote {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--list-marker-color);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>AI 代码生成提示词模板汇总</h1>
+            <p class="author">作者：茶凉凉凉凉丶</p>
+        </header>
+
+        <section>
+            <h2>LaTeX</h2>
+            <p class="intro">请用 LaTeX 生成实现以下功能的代码： 在编写代码时，必须严格遵守以下规范：</p>
+            <ol>
+                <li><strong>【宏包精简】</strong>仅加载实现功能所必需的宏包（如数学用 <code>amsmath</code>，绘图用 <code>tikz</code>），严禁无意义地堆砌不相关的宏包，严禁使用已被淘汰的旧宏包（如 <code>a4wide</code>、<code>epsfig</code>）。</li>
+                <li><strong>【环境隔离】</strong>数学公式绝对禁止在正文中直接硬敲（如 <code>$E=mc^2$</code>），必须严格套用在数学环境中（行内用 <code>$...$</code>，行间用 <code>\[...\]</code> 或 <code>equation</code> 环境）。</li>
+                <li><strong>【图文浮动体】</strong>所有图片（<code>figure</code>）和表格（<code>table</code>）严禁放在正文段落之间硬编码，必须使用浮动体环境包裹，并严格配对 <code>\caption{}</code> 和 <code>\label{}</code>（标签必须在标题下方）。</li>
+                <li><strong>【交叉引用】</strong>严禁在正文中手动输入硬编码的编号（如“见图1”、“由公式(2)可知”），必须使用 <code>\ref{}</code> 或 <code>\eqref{}</code> 进行动态引用，防止增删内容后编号全盘错乱。</li>
+                <li><strong>【三线表规范】</strong>所有数据表格严禁使用 <code>\hline</code> 画出全封闭的网格线（Excel风格），必须使用 <code>booktabs</code> 宏包提供的 <code>\toprule</code>、<code>\midrule</code>、<code>\bottomrule</code> 绘制标准学术三线表。</li>
+                <li><strong>【中文排版规范】</strong>使用 <code>ctexart</code> 或 <code>ctexbook</code> 文档类时，严禁在导言区多余地加载 <code>CJK</code> 或 <code>fontspec</code> 宏包；中英文混排时，必须在中文与英文/数字之间用半角空格隔开（如 <code>使用 Python 进行计算</code>）。</li>
+                <li><strong>【标点规范】</strong>双引号用<code>``''</code>，即<code>Tab</code>上边和右<code>ENTER</code>按键左边的符号，且中文句号全部改为英文的。</li>
+            </ol>
+            <p class="footnote">如无特殊说明，以上要求在本次对话中一直遵循。</p>
+        </section>
+
+        <section>
+            <h2>Mathematica</h2>
+            <p class="intro">请用 Mathematica (Wolfram Language) 编写代码实现如下效果： 在编写代码时，必须严格遵守以下“函数式编程”规范：</p>
+            <ol>
+                <li><strong>【禁止传统循环】</strong>严禁使用 <code>For</code>、<code>While</code>、<code>Do</code> 等传统命令式循环。必须改用 <code>Map</code> (<code>/@</code>)、<code>Apply</code> (<code>@@</code>)、<code>Table</code>、<code>Array</code> 或递归等函数式构造。</li>
+                <li><strong>【善用简写符号】</strong>鼓励大量使用 <code>@</code>、<code>//</code>、<code>~</code>、<code>@@</code> 等后缀和中缀简写形式来缩减代码体积（如用 <code>f/@list</code> 代替 <code>Map[f, list]</code>，用 <code>list//f</code> 代替 <code>f[list]</code>）。</li>
+                <li><strong>【极简注释】</strong>Mathematica 本身具有高度自描述性，严禁在代码内部添加任何行内注释<code>(* ... *)</code>，保持代码像数学公式一样纯净。</li>
+                <li><strong>【内置函数优先】</strong>优先使用内置的列表处理函数（如 <code>Select</code>、<code>Cases</code>、<code>Pick</code>、<code>SortBy</code>、<code>GatherBy</code>）代替手动遍历。</li>
+                <li><strong>【匿名函数】</strong>鼓励使用纯函数（<code>#</code> 与 <code>&</code>）代替定义冗余的独立小函数（如用 <code>#^2 &</code> 代替 <code>f[x_]:=x^2</code>）。</li>
+            </ol>
+            <p class="footnote">如无特殊说明，以上要求在本次对话中一直遵循。</p>
+        </section>
+
+        <section>
+            <h2>Python</h2>
+            <p class="intro">请用 Python 编写代码（必要时注明依赖库）实现以下效果： 在编写代码时，必须严格遵守以下规则：</p>
+            <ol>
+                <li><strong>【类型标注】</strong>所有函数定义必须包含完整的参数类型标注和返回值类型标注（如 <code>def add(a: int, b: int) -> int:</code>），严禁编写无类型提示的“裸函数”。</li>
+                <li><strong>【异常处理】</strong>所有可能失败的外部操作（文件 I/O、网络请求、数据库查询、JSON 解析）必须使用 <code>try...except</code> 包裹，并明确捕获具体异常类型（如 <code>FileNotFoundError</code>、<code>json.JSONDecodeError</code>），严禁使用裸 <code>except:</code> 吞掉所有错误。</li>
+                <li><strong>【路径兼容】</strong>所有文件路径必须使用 <code>pathlib.Path</code> 构造，严禁使用字符串拼接（如 <code>"folder/" + name</code>）。路径拼接用 <code>Path("folder") / name</code>，使代码天然跨平台兼容 Windows 和 Linux。</li>
+                <li><strong>【虚拟环境与依赖】</strong>如果代码需要第三方库，必须在代码首部以注释形式列出对应的 <code>pip install</code> 命令（如 <code># pip install requests pandas</code>），严禁假设用户环境中已预装任何非标准库。</li>
+                <li><strong>【常量管理】</strong>代码中严禁出现裸露的“魔法数字”或硬编码字符串（如直接写 <code>if status == 200:</code>）。必须将其提取到文件顶部的 <code>UPPER_SNAKE_CASE</code> 常量中（如 <code>HTTP_OK = 200</code>），集中管理，方便维护。</li>
+                <li><strong>【列表推导优先】</strong>凡是需要对列表进行筛选、映射、扁平化的操作，优先使用列表推导式（如 <code>[x**2 for x in data if x > 0]</code>）或生成器表达式，严禁为此专门写一个 <code>for</code> 循环 append。</li>
+            </ol>
+            <p class="footnote">如无特殊说明，以上要求在本次对话中一直遵循。如果需要绘图，添加如下 LaTeX 配置：</p>
+            <pre><code># ========== LaTeX配置 ========== 
+plt.rcParams.update({
+    'text.usetex': True,
+    'text.latex.preamble': r'\usepackage{amsmath} \usepackage{amssymb} \usepackage{mathrsfs}',
+    'font.family': 'serif',
+    'font.serif': ['Computer Modern'],
+    'axes.labelsize': 14,
+    'font.size': 12,
+    'legend.fontsize': 11,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'figure.dpi': 100,
+    'axes.unicode_minus': False,
+})</code></pre>
+        </section>
+
+        <section>
+            <h2>C++</h2>
+            <p class="intro">请使用 C++ 为我编写代码，运行环境为 Windows + Visual Studio Insiders。 具体需求如下： 在编写代码时，必须严格遵守以下规则：</p>
+            <ol>
+                <li><strong>【编码防乱码】</strong>代码中所有的打印输出和写文件内容，除注释内容外，其他地方严禁使用任何中文字符（包括中文标点），全部用纯英文代替，防止 VS 编译器出现 C4819 代码页警告或运行时乱码。</li>
+                <li><strong>【安全函数】</strong>严禁使用 <code>localtime</code>、<code>strcpy</code>、<code>sprintf</code> 等被微软标记为不安全的旧函数，必须使用带 <code>_s</code> 后缀的安全版本（如 <code>localtime_s</code>），对于有返回值的函数需检查返回值，对于可能抛出异常的函数需注意安全处理。</li>
+                <li><strong>【预处理指令】</strong>由于 <code>#pragma execution_character_set("utf-8")</code> 已被 VS 弃用（触发 C4996 警告），请改用以下方案之一：
+                    <ul>
+                        <li>方案A：提示用户在项目属性中添加 <code>/utf-8</code> 编译选项；</li>
+                        <li>方案B：将源文件保存为 UTF-8 with BOM 格式，不再需要该 pragma。</li>
+                    </ul>
+                </li>
+                <li><strong>【控制台防乱码】</strong>如果是控制台应用程序，在 <code>main</code> 函数的开头，必须调用： <code>SetConsoleOutputCP(65001);</code> 和 <code>SetConsoleCP(65001);</code></li>
+                <li><strong>【字符串防断行】</strong>如果代码中包含长字符串拼接，请使用 <code>"str1" "str2"</code> 这种断行拼接方式，避免浏览器复制时引入不可见的零宽字符导致 VS 报“常量中有换行符”错误。</li>
+            </ol>
+            <p class="footnote">如无特殊说明，以上要求在本次对话中一直遵循。</p>
+        </section>
+
+        <section>
+            <h2>HTML</h2>
+            <p class="intro">请使用 HTML 为我编写代码，具体需求如下： 在编写代码时，必须严格遵守以下规则：</p>
+            <ol>
+                <li><strong>【字符编码】</strong>所有HTML文件必须在<code>&lt;!DOCTYPE html&gt;</code>之后、<code>&lt;head&gt;</code>标签内的第一行包含<code>&lt;meta charset="UTF-8"&gt;</code>，严禁使用非UTF-8编码，防止中文或特殊字符显示乱码。</li>
+                <li><strong>【语义化与可访问性】</strong>优先使用语义化标签（<code>&lt;header&gt;</code>, <code>&lt;nav&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;section&gt;</code>, <code>&lt;article&gt;</code>, <code>&lt;aside&gt;</code>, <code>&lt;footer&gt;</code>），为交互元素添加必要的<code>aria-*</code>属性或<code>role</code>，且所有<code>&lt;img&gt;</code>标签必须包含有意义的<code>alt</code>属性，确保屏幕阅读器友好。</li>
+                <li><strong>【响应式与移动优先】</strong>必须包含 <code>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</code> ，采用Mobile First策略，结合CSS媒体查询、Flexbox或Grid实现自适应布局，严禁出现无法在移动端正常查看的固定死宽度布局。</li>
+                <li><strong>【样式隔离与维护性】</strong>严禁使用内联样式（<code>style=""</code>）和<code>!important</code>。样式统一写在<code>&lt;style&gt;</code>标签内，采用BEM命名规范或CSS变量（Custom Properties）进行模块化管理。（注：若明确要求使用Tailwind CSS，则直接在class中编写原子类，无需额外写<code>&lt;style&gt;</code>块）。</li>
+                <li><strong>【JavaScript健壮性】</strong><code>&lt;script&gt;</code>标签必须放置在<code>&lt;/body&gt;</code>之前，并使用<code>defer</code>或<code>type="module"</code>属性加载。所有DOM操作必须在<code>DOMContentLoaded</code>事件后执行。严禁使用<code>var</code>，统一使用<code>const</code>和<code>let</code>避免全局污染。严禁直接插入未转义的<code>innerHTML</code>（防XSS），优先使用<code>textContent</code>或<code>setAttribute</code>。</li>
+                <li><strong>【跨浏览器兼容性】</strong>若需兼容旧浏览器，在提示词中明确要求添加CSS前缀。对于现代浏览器，优先使用CSS Grid和Flexbox，针对极其边缘的旧环境可准备fallback方案（如<code>@supports</code>查询），但不应以牺牲现代浏览器性能为代价。</li>
+                <li><strong>【性能优化与资源加载】</strong>图片必须设置<code>width</code>和<code>height</code>属性以避免布局偏移（CLS），非首屏图片添加<code>loading="lazy"</code>。CSS必须置于<code>&lt;head&gt;</code>中，JS必须置于页面底部。如需引入第三方库，优先使用外部CDN链接，但禁止引入非必要的大型框架。</li>
+                <li><strong>【注释规范】</strong>关键布局节点、复杂业务逻辑、以及已知的浏览器兼容性hack处必须添加英文注释解释意图。严禁添加类似“作者、日期、文件名”等一次性无意义元注释。</li>
+                <li><strong>【自包含与防占位符】</strong>生成的代码必须整合在单个<code>.html</code>文件中，可直接在浏览器打开并完整运行，不依赖本地服务器。严禁输出Lorem ipsum等无意义占位文本，所有文案必须使用与上下文场景高度匹配的真实内容。</li>
+                <li><strong>【控制台零报错】</strong>确保代码在最新版Chrome/Firefox/Safari开发者工具中运行时，绝对不产生任何<code>JavaScript</code>错误、警告（如未捕获异常、已废弃API调用）或资源加载失败提示。</li>
+            </ol>
+            <p class="footnote">如无特殊说明，以上要求在本次对话中一直遵循。</p>
+        </section>
+    </main>
+</body>
+</html>
