@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分数阶微积分 v1.0</title>
+
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                tags: 'ams'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        const toggle = document.getElementById('toc-toggle');
+                        const list = document.getElementById('toc-list');
+                        if (toggle && list) {
+                            toggle.addEventListener('click', () => {
+                                list.classList.toggle('toc-hidden');
+                                toggle.textContent = list.classList.contains('toc-hidden') ? '展开目录' : '收起目录';
+                            });
+                        }
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --content-bg: #ffffff;
+            --text-color: #1a202c;
+            --border-color: #e2e8f0;
+            --accent-color: #2b6cb0;
+            --accent-light: #ebf4ff;
+            --theorem-bg: #f7fafc;
+            --definition-bg: #fffff0;
+            --proof-border: #c05621;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --inline-code-bg: #edf2f7;
+            --inline-code-color: #c53030;
+            --toc-bg: #f7fafc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            padding: 1rem;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2.5rem 3rem;
+            background-color: var(--content-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Header / Title */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+
+        .author {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        /* Table of Contents */
+        .toc-wrapper {
+            background-color: var(--toc-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .toc-wrapper h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent-color);
+        }
+
+        #toc-toggle {
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 0.3rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+        }
+
+        #toc-toggle:hover {
+            opacity: 0.9;
+        }
+
+        #toc-list {
+            list-style: none;
+            padding-left: 0;
+            transition: all 0.3s ease;
+        }
+
+        #toc-list.toc-hidden {
+            display: none;
+        }
+
+        #toc-list li {
+            margin-bottom: 0.4rem;
+        }
+
+        #toc-list li a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        #toc-list li a:hover {
+            text-decoration: underline;
+        }
+
+        #toc-list li.sub {
+            padding-left: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 3rem;
+        }
+
+        section:last-child {
+            margin-bottom: 0;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            color: #2d3748;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        /* Math blocks */
+        .math-block {
+            overflow-x: auto;
+            margin: 1rem 0;
+            padding: 0.5rem 0;
+        }
+
+        /* Definition / Theorem / Lemma environments */
+        .env-block {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+
+        .env-block .env-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .env-definition {
+            background-color: var(--definition-bg);
+            border-left-color: #d69e2e;
+        }
+
+        .env-definition .env-title {
+            color: #975a16;
+        }
+
+        .env-theorem {
+            background-color: var(--accent-light);
+            border-left-color: var(--accent-color);
+        }
+
+        .env-theorem .env-title {
+            color: var(--accent-color);
+        }
+
+        .env-lemma {
+            background-color: #f0fff4;
+            border-left-color: #38a169;
+        }
+
+        .env-lemma .env-title {
+            color: #276749;
+        }
+
+        .env-proof {
+            background-color: var(--theorem-bg);
+            border-left-color: var(--proof-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .env-proof .env-title {
+            color: var(--proof-border);
+        }
+
+        .proof-end {
+            text-align: right;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Ordered / Unordered lists */
+        ol, ul {
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        ol li, ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Inline code */
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--inline-code-bg);
+            color: var(--inline-code-color);
+            padding: 0.15em 0.35em;
+            border-radius: 3px;
+            font-size: 0.88em;
+        }
+
+        /* Code blocks */
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            font-size: 0.88em;
+            line-height: 1.6;
+        }
+
+        /* Footnote */
+        .footnote {
+            font-size: 0.85rem;
+            color: #718096;
+            vertical-align: super;
+            margin: 0 2px;
+        }
+
+        .footnote-block {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: #f7fafc;
+            border-radius: 4px;
+        }
+
+        /* References */
+        .references {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .references h2 {
+            border-bottom: none;
+            font-size: 1.3rem;
+        }
+
+        .references ol {
+            padding-left: 1.5rem;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .references ol li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Image placeholder */
+        .img-placeholder {
+            background-color: #edf2f7;
+            border: 1px dashed #a0aec0;
+            border-radius: 6px;
+            padding: 2rem;
+            text-align: center;
+            color: #718096;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        /* Tag labels for equations */
+        .eq-tag {
+            float: right;
+            color: #718096;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            main {
+                padding: 1.5rem 1rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <header>
+            <h1>分数阶微积分 v1.0</h1>
+            <p class="author">作者：茶凉凉凉凉丶<sup>QQ: 3339829816</sup></p>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="toc-wrapper" aria-label="目录">
+            <h3>目录</h3>
+            <button id="toc-toggle" aria-expanded="true">收起目录</button>
+            <ul id="toc-list">
+                <li><a href="#sec1">1. 前言</a></li>
+                <li><a href="#sec2">2. 定义</a></li>
+                <li><a href="#sec3">3. 常用函数的 R-L 微积分公式</a></li>
+                <li><a href="#sec4">4. 积分变换</a></li>
+                <li><a href="#sec5">5. 分数阶微分方程</a></li>
+                <li><a href="#sec6">6. 软件计算</a></li>
+                <li><a href="#sec7">附录：分数阶微积分定义的补充说明</a></li>
+                <li><a href="#refs">参考文献</a></li>
+            </ul>
+        </nav>
+
+        <!-- Section 1 -->
+        <section id="sec1">
+            <h2>1. 前言</h2>
+            <p>分数阶微积分，顾名思义，是将通常意义下的整数阶微积分推广至任意阶（复数域），因此这个名字并不十分恰当，不只限于有理数（分数）阶。显然，推广后的定义，必须完全容纳已有的体系，也要尽可能地满足寻常情形下的各种运算律。</p>
+            <p>值得注意的是，这并不是一个很新的概念，早在 Leibniz 时候就初具雏形了，但严谨的定义却晚很多，而且也并不统一。它们之间互有联系（见附录）。但其中最为常用的是 Riemann-Liouville（下文简称 R-L）定义，本文也主要讨论它的性质。</p>
+            <p>在文中，我们主要研究阶数 $\alpha$ 为实数时的情形，且函数 $f(t)$ 一般定义于 $[a, \infty)$（常见 $a = 0$），并要求 $f \in L_1(a, t)$ 以保证分数阶积分存在。</p>
+            <p>由于微分与积分是一对互逆的运算，统一起见，我们使用 $\mathscr{D}$ 符号来表示。</p>
+
+            <div class="env-block env-definition">
+                <div class="env-title">定义 1.1</div>
+                <p>统一的分数阶微积分算子 ${}_{t_0}\mathscr{D}_t^\alpha f(t)$ 的定义为：</p>
+                <div class="math-block">
+                    $${}_{t_0}\mathscr{D}_t^\alpha f(t) = \begin{cases} \dfrac{d^\alpha}{dt^\alpha} f(t), & \alpha > 0 \\[6pt] f(t), & \alpha = 0 \\[6pt] \displaystyle \int_{t_0}^t f(\tau)\, d\tau^{-\alpha}, & \alpha < 0 \end{cases}$$
+                </div>
+            </div>
+
+            <p>关于 $\mathscr{D}$ 的说明：</p>
+            <ol>
+                <li>若 $\alpha \geq 0$ 且 $t_0 = 0$，则可以省略记号 $t_0$；如果自变量为 $t$ 且没有其他变量，则 $t$ 也可以省略；</li>
+                <li>若 $\alpha > 0$，${}_{t_0}\mathscr{D}_t^\alpha$ 算子表示函数对自变量 $t$ 的 $\alpha$ 阶导数；$\alpha = 0$ 表示原函数；若 $\alpha < 0$，则表示 $-\alpha$ 阶积分；</li>
+                <li>如果 $\alpha$ 为复数，则它的实部决定微分还是积分，这超出本文的范围。</li>
+            </ol>
+
+            <p>不难理解，对一个函数求两次"半导数"，应该等价于一阶导数，即 $\mathscr{D}_t^{1/2}\!\left[\mathscr{D}_t^{1/2}f(t)\right]=\mathscr{D}_t^1 f(t)$。我们猜想分数阶微积分可能有以下性质：</p>
+            <ol>
+                <li>解析函数 $f(t)$ 的分数阶导数 $\mathscr{D}_t^\alpha f(t)$ 对 $t$ 和 $\alpha$ 都是解析的。</li>
+                <li>当阶数为正整数 $n$ 时，退化为经典导数：
+                    <div class="math-block">$$\mathscr{D}_t^\alpha f(t) = \frac{d^n}{dt^n} f(t), \quad n \in \mathbb{N}$$</div>
+                </li>
+                <li>$\mathscr{D}$ 为线性算子：
+                    <div class="math-block">$${}_{t_0}\mathscr{D}_t^\alpha \left[ \lambda f(t) + \mu g(t) \right] = \lambda \cdot {}_{t_0}\mathscr{D}_t^\alpha f(t) + \mu \cdot {}_{t_0}\mathscr{D}_t^\alpha g(t), \quad \forall\lambda, \mu \in \mathbb{R}$$</div>
+                </li>
+                <li>分数阶积分满足半群（可加性）性质：
+                    <div class="math-block">$$\mathscr{D}_t^{-\alpha} \left( \mathscr{D}_t^{-\beta} f(t) \right) = \mathscr{D}_t^{-(\alpha+\beta)} f(t) = \mathscr{D}_t^{-\beta} \left( \mathscr{D}_t^{-\alpha} f(t) \right)$$</div>
+                    对于分数阶导数，半群性质一般不成立。
+                </li>
+            </ol>
+        </section>
+
+        <!-- Section 2 -->
+        <section id="sec2">
+            <h2>2. 定义</h2>
+            <p>我们从整数阶积分入手。很显然，给定函数 $f(t)$ 的一阶积分可以表示为</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{-1} f(t) = \int_{t_0}^t f(\tau)\, d\tau$$</div>
+            <p>从该结果再求一次积分，则可以得出原函数的二阶积分：</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{-2} f(t) = \int_{t_0}^t \int_{t_0}^\tau f(s)\, ds\, d\tau = \int_{t_0}^t f(\tau)(t - \tau)\, d\tau$$</div>
+            <p>其中交换积分次序：</p>
+            <div class="math-block">$$\int_{t_0}^t \int_{t_0}^\tau f(s)\, ds\, d\tau = \int_{s=t_0}^t \left( \int_{\tau=s}^t d\tau \right) f(s)\, ds = \int_{t_0}^t (t-s) f(s)\, ds$$</div>
+            <p>类似地，可以推导出 $n$ 阶积分公式为</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{-n} f(t) = \int_{t_0}^t \cdots \int_{t_0}^{\tau_{n-1}} f(\tau)\, d\tau_1 \cdots d\tau_n = \frac{1}{(n-1)!} \int_{t_0}^t (t - \tau)^{n-1} f(\tau)\, d\tau$$</div>
+            <p>如果整数 $n$ 由正实数 $\alpha$ 取代，则可以直接给出如下的 R-L 分数阶积分公式。</p>
+
+            <div class="env-block env-definition">
+                <div class="env-title">定义 2.1</div>
+                <p>函数 $f(t)$ 的 $\alpha$ 阶 R-L 积分定义为：</p>
+                <div class="math-block">$${}_{t_0}\mathscr{D}_t^{-\alpha} f(t) = \frac{1}{\Gamma(\alpha)} \int_{t_0}^t \frac{f(\tau)}{(t - \tau)^{1 - \alpha}}\, d\tau$$</div>
+            </div>
+
+            <p>R-L 定义是分数阶微积分领域应用较广的定义之一，算子 $\mathscr{D}$ 两端的下标为积分的上下限。</p>
+            <p>分数阶微分（导数）不能将积分中的 $\alpha$ 替换成 $-\alpha$ 直接定义，因为 Gamma 函数在负整数处<span class="footnote">*</span>无定义！但这并不是很困难的事情，我们可以绕个弯。粗略地讲，积分会使函数"升幂"，求导则会"降幂"，我们对整数阶导数的定义是很明了的，可以借助二者的组合来定义。现在考虑 $\beta$ 阶分数阶微分问题。如果 $n - 1 < \beta \leq n$，记 $n = \lceil\beta\rceil$，则：</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{\beta} f(t) = \frac{d^n}{dt^n} \left[ \mathscr{D}_t^{-(n-\beta)} f(t) \right]$$</div>
+            <div class="footnote-block">* Gamma 函数的镜像延拓性质：$\Gamma(-x)=\dfrac{-\pi\csc(\pi x)}{\Gamma(x+1)},\; x>0$</div>
+
+            <p>基于该积分定义，可以给出正式的 R-L 分数阶导数的定义。</p>
+
+            <div class="env-block env-definition">
+                <div class="env-title">定义 2.2</div>
+                <p>给定函数 $f(t)$ 的 R-L $\beta$ 阶微分的定义为：</p>
+                <div class="math-block">$${}_{t_0}\mathscr{D}_t^{\beta} f(t) = \frac{1}{\Gamma(n - \beta)} \frac{d^n}{dt^n} \int_{t_0}^t \frac{f(\tau)}{(t - \tau)^{1 + \beta - n}}\, d\tau$$</div>
+                <p>式中，$n - 1 < \beta \leq n$，且 $n = \lceil\beta\rceil$。</p>
+            </div>
+
+            <p>特别的，如果 $0<\beta<1$，则</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{\beta} f(t) = \frac{1}{\Gamma(1 - \beta)} \frac{d}{dt} \int_{t_0}^t \frac{f(\tau)}{(t - \tau)^{\beta}}\, d\tau$$</div>
+            <p>这在物理、控制论、信号处理等领域是比较常用的。</p>
+
+            <p>接下来我们介绍如何在不同的积分下限中变换：</p>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 2.1</div>
+                <p>如果已知 ${}_{0}\mathscr{D}_t^{\alpha} f(t)$，则 R-L 分数阶导数可以表示为：</p>
+                <div class="math-block">$${}_{t_0}\mathscr{D}_t^{\alpha} f(t) = {}_0\mathscr{D}_s^{\alpha} f(s + t_0)$$</div>
+                <p>其中 $s = t - t_0$。</p>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>令 $\tau = \theta + t_0$，则 $d\tau = d\theta$，$\theta \in [0, t - t_0]$，代入定义式的右侧：</p>
+                <div class="math-block">$$\frac{1}{\Gamma(n-\alpha)} \frac{d^n}{dt^n} \int_{t_0}^t \frac{f(\tau)}{(t-\tau)^{1+\alpha-n}}\, d\tau = \frac{1}{\Gamma(n-\alpha)} \frac{d^n}{dt^n} \int_0^{t-t_0} \frac{f(\theta + t_0)}{(t - t_0 - \theta)^{1+\alpha-n}}\, d\theta$$</div>
+                <p>再令 $t = s + t_0$，则 $dt = ds$，$t - t_0 = s$，代入上式右侧：</p>
+                <div class="math-block">$$\frac{1}{\Gamma(n-\alpha)} \frac{d^n}{dt^n} \int_0^s \frac{f(\theta + t_0)}{(s - \theta)^{1+\alpha-n}}\, d\theta = \frac{1}{\Gamma(n-\alpha)} \frac{d^n}{ds^n} \int_0^s \frac{f(\theta + t_0)}{(s - \theta)^{1+\alpha-n}}\, d\theta$$</div>
+                <p>令 $F(\theta) = f(\theta + t_0)$，则：</p>
+                <div class="math-block">$$\frac{1}{\Gamma(n-\alpha)} \frac{d^n}{ds^n} \int_0^s \frac{F(\theta)}{(s - \theta)^{1+\alpha-n}}\, d\theta = \mathscr{D}_s^{\alpha} F(s) = \mathscr{D}_s^{\alpha} f(s + t_0)$$</div>
+                <p class="proof-end">∎</p>
+            </div>
+
+            <p>已知幂函数在下限为 $0$ 时的 R-L 分数阶导数（推导可看下一章）为：</p>
+            <div class="math-block">$$_0\mathscr{D}_t^{\alpha} t^{\mu} = \frac{\Gamma(\mu+1)}{\Gamma(\mu+1-\alpha)} t^{\mu-\alpha}, \quad \mu > -1$$</div>
+            <p>试推导下限为 $t_0$ 时幂函数 $(t-t_0)^{\mu}$ 的 R-L 分数阶导数。由定理 2.1 可得：</p>
+            <div class="math-block">$${}_{t_0}\mathscr{D}_t^{\alpha} (t-t_0)^{\mu} = \frac{\Gamma(\mu+1)}{\Gamma(\mu+1-\alpha)} (t-t_0)^{\mu-\alpha}$$</div>
+
+            <p>此外，根据 R-L 定义，令函数 $f(t)$ 是定义在非负实数域内的全部绝对连续的实函数，$f(t)$ 在零点处存在右极限，$f'(t)$ 在正实数域内的任意有界子区间上 Lebesgue 可积，$0 < v < 1$。于是，可以推得：</p>
+            <div class="math-block">$$_{0}\mathscr{D}_t^{v} f(t) = \frac{1}{\Gamma(1-v)} \left[ \frac{f(0)}{t^v} + \int_0^t \frac{f'(\tau)}{(t-\tau)^v}\, d\tau \right], \quad 0 < v < 1$$</div>
+
+            <p>如果 ${}_{0}\mathscr{D}_t^{-v}$ 为 $v$ 阶 R-L 定义的分数阶积分算子，$D$ 为传统的一阶微分算子，则可以推导得到 R-L 定义的分数阶微分和分数阶积分存在如下关系：</p>
+            <div class="math-block">$$_{0}\mathscr{D}_t^{v} f(t) = {}_{0}\mathscr{D}_t^{-(1-v)} D f(t) + \frac{1}{\Gamma(1-v)} \frac{f(0)}{t^v}$$</div>
+            <p>因此，如果 $f(0) = 0$，则有：</p>
+            <div class="math-block">$$_{0}\mathscr{D}_t^{v} f(t) = {}_{0}\mathscr{D}_t^{-(1-v)} D f(t)$$</div>
+            <p>这就是分数阶微分和分数阶积分的内在关系。根据它，可由分数阶微分的计算结果推导得到分数阶积分的计算结果。</p>
+        </section>
+
+        <!-- Section 3 -->
+        <section id="sec3">
+            <h2>3. 常用函数的 R-L 微积分公式</h2>
+            <p>在开始前，先介绍一个新的特殊函数：</p>
+
+            <div class="env-block env-definition">
+                <div class="env-title">定义 3.1</div>
+                <p>双参数 Mittag-Leffler 函数的定义为：</p>
+                <div class="math-block">$$E_{\alpha, \beta}(z) = \sum_{k=0}^{\infty} \frac{z^k}{\Gamma(k\alpha + \beta)}$$</div>
+                <p>式中，$\alpha, \beta \in \mathbb{C}$，且无穷级数对 $z \in \mathbb{C}$ 收敛的条件为 $\Re(\alpha) > 0,\; \Re(\beta) > 0$。</p>
+                <p>若 $\beta = 1$，则双参数 Mittag-Leffler 函数退化成单参数 Mittag-Leffler 函数，即</p>
+                <div class="math-block">$$E_{\alpha, 1}(z) = E_{\alpha}(z)$$</div>
+                <p>换句话说，单参数 Mittag-Leffler 函数是双参数函数的一个特例。</p>
+            </div>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 3.1</div>
+                <p>设 $\alpha > 0$，$n = \lceil \alpha \rceil$，则常数函数 $f(t) = C$（$C$ 为常数）的 R-L 分数阶导数为：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} C = \frac{C \, t^{-\alpha}}{\Gamma(1-\alpha)}, \quad \alpha \notin \mathbb{N}$$</div>
+                <p>当 $\alpha = n \in \mathbb{N}$ 时，退化为整数阶导数：</p>
+                <div class="math-block">$$\mathscr{D}_t^{n} C = \begin{cases} C, & n = 0 \\ 0, & n = 1, 2, 3, \dots \end{cases}$$</div>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>由 Riemann-Liouville 分数阶导数定义（下限取 $0$）：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} C = \frac{1}{\Gamma(n-\alpha)} \frac{d^n}{dt^n} \int_0^t (t-\tau)^{n-\alpha-1} \cdot C \, d\tau$$</div>
+                <p>先计算内层积分：</p>
+                <div class="math-block">$$\int_0^t (t-\tau)^{n-\alpha-1}\, d\tau = \int_0^t u^{n-\alpha-1}\, du = \frac{t^{n-\alpha}}{n-\alpha}$$</div>
+                <p>其中令 $u = t - \tau$。于是：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} C = \frac{C}{\Gamma(n-\alpha)} \cdot \frac{d^n}{dt^n} \left( \frac{t^{n-\alpha}}{n-\alpha} \right) = \frac{C}{\Gamma(n-\alpha)} \cdot \frac{1}{n-\alpha} \cdot \frac{d^n}{dt^n} t^{n-\alpha}$$</div>
+                <p>计算 $n$ 阶导数：</p>
+                <div class="math-block">$$\frac{d^n}{dt^n} t^{n-\alpha} = (n-\alpha)(n-\alpha-1)\cdots(1-\alpha)\, t^{-\alpha}$$</div>
+                <p>利用 Gamma 函数的性质 $\Gamma(z+1) = z\Gamma(z)$，有：</p>
+                <div class="math-block">$$(n-\alpha)(n-\alpha-1)\cdots(1-\alpha) = \frac{\Gamma(n-\alpha+1)}{\Gamma(1-\alpha)}$$</div>
+                <p>代入得：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} C = \frac{C}{\Gamma(n-\alpha)} \cdot \frac{1}{n-\alpha} \cdot \frac{\Gamma(n-\alpha+1)}{\Gamma(1-\alpha)} t^{-\alpha}$$</div>
+                <p>由于 $\Gamma(n-\alpha+1) = (n-\alpha)\Gamma(n-\alpha)$，因此：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} C = \frac{C}{\Gamma(n-\alpha)} \cdot \frac{1}{n-\alpha} \cdot (n-\alpha)\Gamma(n-\alpha) \cdot \frac{t^{-\alpha}}{\Gamma(1-\alpha)} = \frac{C \, t^{-\alpha}}{\Gamma(1-\alpha)}$$</div>
+                <p>当 $\alpha = n \in \mathbb{N}$ 时，$\Gamma(1-n)$ 无定义，但由整数阶导数直接可得：$\mathscr{D}_t^{n} C = 0$（$n \geq 1$）。</p>
+                <p class="proof-end">∎</p>
+            </div>
+
+            <p>现考虑下限 $t_0 = 0$ 时幂函数和指数函数的 R-L 分数阶导数的问题。</p>
+
+            <div class="env-block env-lemma">
+                <div class="env-title">引理 3.1</div>
+                <p>幂函数 $f(t) = t^\mu$，且 $\mu > -1$，则 $\mathscr{D}_t^{\alpha} f(t)$ 满足：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} t^\mu = \frac{\Gamma(\mu + 1)}{\Gamma(\mu + 1 - \alpha)} t^{\mu - \alpha}$$</div>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>由定义，对于 $\alpha > 0$，记 $n = \lceil \alpha \rceil$，有：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} t^\mu = \frac{d^n}{dt^n} \left( \frac{1}{\Gamma(n-\alpha)} \int_0^t (t-\tau)^{n-\alpha-1} \tau^\mu\, d\tau \right)$$</div>
+                <p>首先计算内层积分。令 $\tau = tu$，则 $d\tau = t\,du$，积分限 $u$ 从 $0$ 到 $1$：</p>
+                <div class="math-block">$$\int_0^t (t-\tau)^{n-\alpha-1} \tau^\mu\, d\tau = t^{n-\alpha-1+\mu+1} \int_0^1 (1-u)^{n-\alpha-1} u^\mu\, du = t^{n-\alpha+\mu}\, \mathrm{B}(n-\alpha, \mu+1)$$</div>
+                <p>其中 $\displaystyle \mathrm{B}(x, y) = \int_0^1 (1-u)^{x-1} u^{y-1}\, du = \dfrac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}$ 为 Beta 函数。于是：</p>
+                <div class="math-block">$$\int_0^t (t-\tau)^{n-\alpha-1} \tau^\mu\, d\tau = t^{n-\alpha+\mu} \cdot \frac{\Gamma(n-\alpha)\Gamma(\mu+1)}{\Gamma(n-\alpha+\mu+1)}$$</div>
+                <p>代入分数阶导数定义：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} t^\mu = \frac{d^n}{dt^n} \left( \frac{1}{\Gamma(n-\alpha)} \cdot t^{n-\alpha+\mu} \cdot \frac{\Gamma(n-\alpha)\Gamma(\mu+1)}{\Gamma(n-\alpha+\mu+1)} \right) = \frac{\Gamma(\mu+1)}{\Gamma(n-\alpha+\mu+1)} \cdot \frac{d^n}{dt^n} t^{n-\alpha+\mu}$$</div>
+                <p>计算 $n$ 阶导数：</p>
+                <div class="math-block">$$\frac{d^n}{dt^n} t^{n-\alpha+\mu} = (n-\alpha+\mu)(n-\alpha+\mu-1)\cdots(\mu-\alpha+1)\, t^{\mu-\alpha}$$</div>
+                <p>利用 Gamma 函数的性质 $\Gamma(z+1) = z\Gamma(z)$，有：</p>
+                <div class="math-block">$$\frac{d^n}{dt^n} t^{n-\alpha+\mu} = \frac{\Gamma(n-\alpha+\mu+1)}{\Gamma(\mu-\alpha+1)} t^{\mu-\alpha}$$</div>
+                <p>因此：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} t^\mu = \frac{\Gamma(\mu+1)}{\Gamma(n-\alpha+\mu+1)} \cdot \frac{\Gamma(n-\alpha+\mu+1)}{\Gamma(\mu-\alpha+1)} t^{\mu-\alpha} = \frac{\Gamma(\mu+1)}{\Gamma(\mu-\alpha+1)} t^{\mu-\alpha}$$</div>
+                <p>注意到 $\Gamma(\mu-\alpha+1) = \Gamma(\mu+1-\alpha)$，故：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} t^\mu = \frac{\Gamma(\mu+1)}{\Gamma(\mu+1-\alpha)} t^{\mu-\alpha}$$</div>
+                <p class="proof-end">∎</p>
+            </div>
+
+            <div class="img-placeholder">[图片: fractional_derivatives_transparent.pdf — 幂函数分数阶导数可视化]</div>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 3.2</div>
+                <p>指数函数 $f(t) = e^{\lambda t}$ 的 R-L 分数阶导数为：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} e^{\lambda t} = t^{-\alpha} E_{1,1-\alpha}(\lambda t)$$</div>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>指数函数 $e^{\lambda t}$ 的 Taylor 幂级数展开为：</p>
+                <div class="math-block">$$e^{\lambda t} = \sum_{k=0}^\infty \frac{(\lambda t)^k}{k!} = \sum_{k=0}^\infty \frac{\lambda^k t^k}{\Gamma(k+1)}$$</div>
+                <p>利用引理 3.1 的性质，对上式右侧的项逐项计算 R-L 分数阶微积分：</p>
+                <div class="math-block">$$\mathscr{D}_t^{\alpha} e^{\lambda t} = \sum_{k=0}^\infty \mathscr{D}_t^{\alpha} \frac{\lambda^k t^k}{\Gamma(k+1)} = \sum_{k=0}^\infty \frac{\lambda^k t^{k-\alpha}}{\Gamma(k+1-\alpha)} = t^{-\alpha} \sum_{k=0}^\infty \frac{(\lambda t)^k}{\Gamma(k+1-\alpha)} = t^{-\alpha} E_{1,1-\alpha}(\lambda t)$$</div>
+                <p class="proof-end">∎</p>
+            </div>
+
+            <div class="img-placeholder">[图片: fractional_derivatives_exp5x_ml_transparent.pdf — 指数函数分数阶导数可视化]</div>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 3.3</div>
+                <p>其他常用函数的 R-L 分数阶导数公式：</p>
+                <div class="math-block">$$\mathscr{D}_t^\alpha H(t-a) = \frac{(t-a)^{-\alpha}}{\Gamma(1-\alpha)} H(t-a), \qquad \mathscr{D}_t^\alpha f(t) = H(t-a)\, \mathscr{D}_t^\alpha f(t)$$</div>
+                <div class="math-block">$$\mathscr{D}_t^\alpha \delta(t) = \frac{t^{-\alpha-1}}{\Gamma(-\alpha)}, \qquad \mathscr{D}_t^\alpha \delta^{(n)}(t) = \frac{t^{-\alpha-n-1}}{\Gamma(-\alpha-n)}$$</div>
+                <div class="math-block">$$\mathscr{D}_t^\alpha \cosh \sqrt{\lambda t} = t^{-\alpha} E_{2,1-\alpha}(\lambda t^2), \qquad \mathscr{D}_t^\alpha \sinh \sqrt{\lambda t} = t^{1-\alpha} E_{2,2-\alpha}(\lambda t^2)$$</div>
+                <div class="math-block">$$_{-\infty}\mathscr{D}_t^\alpha e^{\lambda t} = \lambda^\alpha e^{\lambda t}, \qquad {}_{-\infty}\mathscr{D}_t^\alpha e^{\lambda t+\mu} = \lambda^\alpha e^{\lambda t+\mu}, \quad \lambda > 0$$</div>
+                <div class="math-block">$$_{-\infty}\mathscr{D}_t^\alpha \sin \lambda t = \lambda^\alpha \sin(t + \alpha\pi/2), \qquad {}_{-\infty}\mathscr{D}_t^\alpha \cos \lambda t = \lambda^\alpha \cos(t + \alpha\pi/2)$$</div>
+                <div class="math-block">$$_{-\infty}\mathscr{D}_t^\alpha e^{\lambda t} \sin \mu t = r^\alpha e^{\lambda t} \sin(\mu t + \alpha\varphi)$$</div>
+                <div class="math-block">$$_{-\infty}\mathscr{D}_t^\alpha e^{\lambda t} \cos \mu t = r^\alpha e^{\lambda t} \cos(\mu t + \alpha\varphi)$$</div>
+                <p>其中，$H(t-a)$ 为 Heaviside 函数（阶跃函数），即若 $t \geq a$ 则 $H(t-a)=1$，否则 $H(t-a)=0$；$\delta(t)$ 为 Dirac 函数；中间变量定义为 $r = \sqrt{\lambda^2 + \mu^2}$，$\tan\varphi = \mu/\lambda$。值得指出的是，目前只有很少几类函数的 R-L 分数阶导数的解析解存在，大部分还是靠数值方法。</p>
+            </div>
+        </section>
+
+        <!-- Section 4 -->
+        <section id="sec4">
+            <h2>4. 积分变换</h2>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 4.1</div>
+                <p>若 $n = \lceil \gamma \rceil$，函数 $f(t)$ 分数阶积分和导数的 Laplace 变换分别满足：</p>
+                <div class="math-block">$$\mathcal{L} \left[ \mathscr{D}_t^{-\beta} f(t) \right] = s^{-\beta} F(s) \tag{4-1}$$</div>
+                <div class="math-block">$$\mathcal{L} \left[\mathscr{D}_t^{\gamma} f(t) \right] = s^{\gamma} F(s) - \sum_{k=0}^{n-1} s^k \, \mathscr{D}_t^{\gamma-k-1} f(t) \bigg|_{t=0} \tag{4-2}$$</div>
+                <p>其中 $F(s)=\mathcal{L}[f(t)]$。</p>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>首先看积分公式。卷积函数的 Laplace 变换可以写成：</p>
+                <div class="math-block">$$\mathcal{L}[f(t) * g(t)] = F(s) G(s)$$</div>
+                <p>令 $g(t) = t^{\beta-1}$，则：</p>
+                <div class="math-block">$$\mathscr{D}_t^{-\beta} f(t) = \frac{1}{\Gamma(\beta)} \int_0^t \frac{f(\tau)}{(t-\tau)^{1-\beta}}\, d\tau = t^{\beta-1} * f(t)$$</div>
+                <p>可以看出 $G(s) = \Gamma(\beta) s^{-\beta}$，这样就可以证明积分公式：</p>
+                <div class="math-block">$$\mathcal{L} \left[ \mathscr{D}_t^{-\beta} f(t) \right] = s^{-\beta} F(s) \tag{4-3}$$</div>
+                <p>现在探讨分数阶导数的 Laplace 变换公式。记 $\mathscr{D}_t^{\gamma} f(t) = g^{(n)}(t)$，其中：</p>
+                <div class="math-block">$$g(t) = \frac{1}{\Gamma(n-\gamma)} \mathscr{D}_t^{-(n-\gamma)} f(t) = \int_0^t \frac{f(\tau)}{(t-\tau)^{\gamma+1-n}}\, d\tau$$</div>
+                <p>由式 (4-3) 可以直接看出：</p>
+                <div class="math-block">$$g^{(n-k-1)}(t) = \frac{d^{n-k-1}}{dt^{n-k-1}} \mathscr{D}_t^{-(n-\gamma)} f(t) = \mathscr{D}_t^{\gamma-k-1} f(t) \tag{4-4}$$</div>
+                <p>将式 (4-3) 与式 (4-4) 代入整数阶导数 Laplace 变换的公式，则可以发现式 (4-2) 是满足的，由此证明微分公式。</p>
+                <p class="proof-end">∎</p>
+            </div>
+
+            <p>从上面的微分公式可以看出，R-L 分数阶导数的 Laplace 变换涉及函数分数阶导数的初值，这在实际应用中是很苛刻的，因为这些函数的初值通常是很难获得的。</p>
+
+            <div class="env-block env-theorem">
+                <div class="env-title">定理 4.2</div>
+                <p>函数 $f(t)$ 的分数阶微积分的 Fourier 变换可以统一写成：</p>
+                <div class="math-block">$$\mathcal{F} \left[ \mathscr{D}_t^{\alpha} f(t) \right] = (i\omega)^{\alpha} \mathcal{F}[f(t)]$$</div>
+                <p>其中，$\alpha$ 既可以为正数，表示分数阶微分，也可以为负值，表示积分。</p>
+            </div>
+
+            <div class="env-block env-proof">
+                <div class="env-title">证明</div>
+                <p>首先考虑分数阶积分的情形，即 $\alpha = -\beta$，其中 $\beta > 0$。R-L 分数阶积分的 Fourier 变换为：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{-\beta} f(t) \right] = \mathcal{F} \left[ \frac{1}{\Gamma(\beta)} \int_{-\infty}^t (t-\tau)^{\beta-1} f(\tau)\, d\tau \right]$$</div>
+                <p>注意到上式右端为卷积形式：</p>
+                <div class="math-block">$${}_{-\infty}\mathscr{D}_t^{-\beta} f(t) = (t^{\beta-1}_+ * f)(t) = \int_{-\infty}^\infty \frac{(t-\tau)^{\beta-1}}{\Gamma(\beta)} H(t-\tau) f(\tau)\, d\tau$$</div>
+                <p>其中 $H(t)$ 为 Heaviside 阶跃函数，$t^{\beta-1}_+ = \dfrac{t^{\beta-1}}{\Gamma(\beta)} H(t)$。由卷积定理：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{-\beta} f(t) \right] = \mathcal{F}[t^{\beta-1}_+] \cdot \mathcal{F}[f(t)]$$</div>
+                <p>已知 $t^{\beta-1}_+$ 的 Fourier 变换为 $\mathcal{F}[t^{\beta-1}_+] = (i\omega)^{-\beta}$，于是：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{-\beta} f(t) \right] = (i\omega)^{-\beta} \hat{f}(\omega)$$</div>
+                <p>其中 $\hat{f}(\omega) = \mathcal{F}[f(t)]$。记 $\alpha = -\beta$，则：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{\alpha} f(t) \right] = (i\omega)^{\alpha} \hat{f}(\omega)$$</div>
+                <p>对于分数阶微分的情形，考虑 $\alpha > 0$。R-L 分数阶导数可表示为：</p>
+                <div class="math-block">$${}_{-\infty}\mathscr{D}_t^{\alpha} f(t) = \frac{d^n}{dt^n} \left[ {}_{-\infty}\mathscr{D}_t^{-(n-\alpha)} f(t) \right], \quad n-1 < \alpha \le n$$</div>
+                <p>由 Fourier 变换的性质 $\mathcal{F}[f^{(n)}(t)] = (i\omega)^n \hat{f}(\omega)$，以及积分情形的结果，可得：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{\alpha} f(t) \right] = (i\omega)^n \cdot (i\omega)^{-(n-\alpha)} \hat{f}(\omega) = (i\omega)^{\alpha} \hat{f}(\omega)$$</div>
+                <p>综上所述，对于任意实数 $\alpha$（正为微分，负为积分），有：</p>
+                <div class="math-block">$$\mathcal{F} \left[ {}_{-\infty}\mathscr{D}_t^{\alpha} f(t) \right] = (i\omega)^{\alpha} \mathcal{F}[f(t)]$$</div>
+                <p class="proof-end">∎</p>
+            </div>
+        </section>
+
+        <!-- Section 5 -->
+        <section id="sec5">
+            <h2>5. 分数阶微分方程</h2>
+            <p>分数阶线性微分方程的一般形式为：</p>
+            <div class="math-block">$$a_n \mathscr{D}_t^{\beta_n} y(t) + a_{n-1} \mathscr{D}_t^{\beta_{n-1}} y(t) + \cdots + a_1 \mathscr{D}_t^{\beta_1} y(t) + a_0 \mathscr{D}_t^{\beta_0} y(t) = u(t) \tag{5-1}$$</div>
+            <p>其中，$u(t)$ 可以由某函数及其分数阶微分构成。为方便起见，不妨假设微分方程中的阶次满足 $\beta_n > \beta_{n-1} > \cdots > \beta_1 > \beta_0 > 0$。若需要研究的微分方程出现下面两种特殊情况，则需要先对其变换，再进行求解。</p>
+            <ol>
+                <li>若研究的微分方程各个阶次不满足上述大小关系，则可以先进行排序。</li>
+                <li>若涉及到负的 $\beta_i$ 值，则原来的方程为分数阶微积分方程，需要选择引入新的变量 $z(t) = \mathscr{D}_0^{\beta_0} y(t)$，这样就可以将原来的微积分方程变换成关于 $z(t)$ 的微分方程。</li>
+            </ol>
+            <p>假设函数 $y(t)$ 具有零初始条件，则可以对该方程进行 Laplace 变换，得出：</p>
+            <div class="math-block">$$G(s) = \frac{Y(s)}{U(s)} = \frac{1}{a_n s^{\beta_n} + a_{n-1} s^{\beta_{n-1}} + \cdots + a_1 s^{\beta_1} + a_0 s^{\beta_0}}$$</div>
+            <p>这里，$G(s)$ 又称为分数阶传递函数。</p>
+            <p>利用 Grünwald-Letnikov 定义（见附录），用离散方法可以将其改写成：</p>
+            <div class="math-block">$$a_i \mathscr{D}_0^{\beta_i} y(t) \simeq \frac{1}{h^{\beta_i}} \sum_{j=0}^{\lfloor (t-a)/h \rfloor} w_j^{(\beta_i)} y_{t-jh} = \frac{1}{h^{\beta_i}} \left[ y_t + \sum_{j=1}^{\lfloor (t-a)/h \rfloor} w_j^{(\beta_i)} y_{t-jh} \right]$$</div>
+            <p>其中，$w_0^{(\beta_i)}$ 可以由下面的递推公式得出：</p>
+            <div class="math-block">$$w_0^{(\beta_i)} = 1, \quad w_j^{(\beta_i)} = \left( 1 - \frac{\beta_i + 1}{j} \right) w_{j-1}^{(\beta_i)}, \quad j = 1, 2, \cdots$$</div>
+            <p>代入式 (5-1)，则可以直接推导出微分方程数值解为：</p>
+            <div class="math-block">$$y_t = \frac{1}{\displaystyle \sum_{i=0}^{n} \frac{a_i}{h^{\beta_i}}} \left[ u_t - \sum_{i=0}^{n} \frac{a_i}{h^{\beta_i}} \sum_{j=1}^{\lfloor (t-a)/h \rfloor} w_j^{(\beta_i)} y_{t-jh} \right]$$</div>
+        </section>
+
+        <!-- Section 6 -->
+        <section id="sec6">
+            <h2>6. 软件计算</h2>
+            <p>使用数学软件 Mathematica，可以轻松计算分数阶微积分。</p>
+            <pre><code>Fractional[Cosh[Sqrt[t]], {t, 1/2}]  (* 计算1/2阶导数 *)
+Fractional[Sin[2*t - 1], {t, -1/6}] // FullSimplify  (* 计算1/6阶积分并完全化简 *)</code></pre>
+            <p>分别给出：</p>
+            <pre><code>(2 + \[Pi] Sqrt[t] StruveL[-2, Sqrt[t]] + 2 \[Pi] StruveL[-1, Sqrt[t]] + \[Pi] Sqrt[t] StruveL[0, Sqrt[t]])/(4 Sqrt[\[Pi]] Sqrt[t])
+(t^(1/6) (12 t Cos[1] HypergeometricPFQ[{1}, {13/12, 19/12}, -t^2] - 7 HypergeometricPFQ[{1}, {7/12, 13/12}, -t^2] Sin[1]))/(6 Gamma[13/6])</code></pre>
+
+            <p>也可以用拉普拉斯变换求解微分方程，如</p>
+            <div class="math-block">$$\mathscr{D}_t^{-2/3}y(t)-y(t)=1$$</div>
+            <p>代码：</p>
+            <pre><code>eqn = Fractional[y[t], {t, -2/3}] - y[t] == 1;
+Solve[LaplaceTransform[eqn, t, s], LaplaceTransform[y[t], t, s]]
+sol = InverseLaplaceTransform[%, s, t]</code></pre>
+            <p>最终给出解：</p>
+            <div class="math-block">$$y(t)\to -E_{2/3}\left(t^{2/3}\right)$$</div>
+
+            <p>当表达式很复杂时，解析解大概率是没有的，但我们可以用数值方法，如</p>
+            <pre><code>NFractionalD[x^2, {x, 1/2}, 0.25]
+NFractionalD[x^2, {x, -2/5}, 0.25]</code></pre>
+            <p>给出了</p>
+            <pre><code>0.188063
+0.0240821</code></pre>
+
+            <p>绘制指数函数的 $1/3$ 阶导数</p>
+            <pre><code>Plot[NFractionalD[Exp[x], {x, 1/3}, x0], {x0, 0, 1/10}]</code></pre>
+            <p>返回图像：</p>
+            <div class="img-placeholder">[图片: d_expx.pdf — 指数函数 1/3 阶导数图像]</div>
+        </section>
+
+        <!-- Appendix -->
+        <section id="sec7">
+            <h2>附录：分数阶微积分定义的补充说明</h2>
+
+            <h3>Cauchy 型定义</h3>
+            <p>Cauchy 型定义基于复变函数中的 Cauchy 积分公式，将整数阶导数的 Cauchy 积分表示直接推广至分数阶。对于解析函数 $f(z)$，整数阶导数的 Cauchy 公式为：</p>
+            <div class="math-block">$$f^{(n)}(z) = \frac{n!}{2\pi i} \oint_{\gamma} \frac{f(\zeta)}{(\zeta - z)^{n+1}}\, d\zeta$$</div>
+            <p>将其中的阶乘 $n!$ 替换为 Gamma 函数，并将整数 $n$ 推广为任意实数 $\alpha > 0$，即得 Cauchy 型分数阶导数定义：</p>
+            <div class="math-block">$$\mathscr{D}^{\alpha} f(z) = \frac{\Gamma(\alpha+1)}{2\pi i} \oint_{\gamma} \frac{f(\zeta)}{(\zeta - z)^{\alpha+1}}\, d\zeta$$</div>
+            <p>该定义要求 $f(z)$ 在围道 $\gamma$ 内解析，且 $\alpha$ 不为负整数。Cauchy 定义将分数阶微积分自然地融入复分析框架，在理论研究中具有重要意义，它与 R-L 定义在一定条件下等价，特别适用于处理解析函数的分数阶导数。</p>
+
+            <h3>Grünwald-Letnikov (G-L) 定义</h3>
+            <p>G-L 定义基于差商极限，直接由整数阶差商推广而来：</p>
+            <div class="math-block">$$_{a}^{\mathrm{GL}}\mathscr{D}_t^{\alpha} f(t) = \lim_{h \to 0} \frac{1}{h^{\alpha}} \sum_{k=0}^{\lfloor (t-a)/h \rfloor} (-1)^k \binom{\alpha}{k} f(t - kh)$$</div>
+            <p>其中 $\binom{\alpha}{k} = \dfrac{\alpha(\alpha-1)\cdots(\alpha-k+1)}{k!}$。该定义在数值计算中尤为重要。</p>
+
+            <h3>Caputo 导数</h3>
+            <p>Caputo 导数定义为"先求整数阶导数，再做分数阶积分"：</p>
+            <div class="math-block">$$^{C}_{a}\mathscr{D}_t^{\alpha} f(t) = \frac{1}{\Gamma(n-\alpha)} \int_a^t (t-\tau)^{n-\alpha-1} f^{(n)}(\tau)\, d\tau, \quad n-1 < \alpha \le n$$</div>
+            <p>其优势在于常数的导数为零，且初值条件形式与整数阶微分方程一致。</p>
+
+            <h3>Weyl 定义</h3>
+            <p>Weyl 定义适用于定义在 $(-\infty, \infty)$ 上的函数，下限取 $-\infty$：</p>
+            <div class="math-block">$$_{-\infty}\mathscr{D}_t^{\alpha} f(t) = \frac{1}{\Gamma(n-\alpha)} \frac{d^n}{dt^n} \int_{-\infty}^t (t-\tau)^{n-\alpha-1} f(\tau)\, d\tau$$</div>
+            <p>该定义在傅里叶分析中具有简洁的变换性质：$\mathcal{F}[{}_{-\infty}\mathscr{D}_t^{\alpha} f(t)] = (i\omega)^{\alpha} \mathcal{F}[f(t)]$。</p>
+
+            <h3>定义之间的关系</h3>
+            <p>对于充分光滑的函数且满足适当初值条件，R-L 与 Caputo 导数之间存在如下关系：</p>
+            <div class="math-block">$$^{C}_{a}\mathscr{D}_t^{\alpha} f(t) = {}_{a}^{\mathrm{RL}}\mathscr{D}_t^{\alpha} f(t) - \sum_{k=0}^{n-1} \frac{f^{(k)}(a)}{\Gamma(k-\alpha+1)} (t-a)^{k-\alpha}$$</div>
+
+            <p>当函数 $s(t)$ 存在 $m+1$ 阶连续导数且 $m$ 至少取得 $[v]=n-1$ 时，Grünwald-Letnikov 定义和 Riemann-Liouville 定义是等价的。但若不能满足上述条件，Riemann-Liouville 定义是 Grünwald-Letnikov 定义的拓展，具有更广泛的应用。可见，对于大多函数，二者可以互换。</p>
+
+            <p>当 $s(t)$ 满足 $s^{(k)}(a)=0$（$k=0,1,\cdots,n-1$）且存在 $m+1$ 阶连续导数时，Caputo 定义和 Grünwald-Letnikov 定义等价；否则，两定义不等价。令 $\mathbf{N}$ 表示自然数集，如果对 Riemann-Liouville 和 Caputo 定义的分数阶微分分别求 $v \to n$ 极限，可以推导得：</p>
+            <div class="math-block">$${}_{a}^{C}\mathscr{D}_t^n s(t) = {}_{a}^{RL}\mathscr{D}_t^n s(t) = s^{(n)}(t), \quad n \in \mathbf{N}$$</div>
+
+            <p>此外，Caputo 定义的分数阶积分和 Riemann-Liouville 定义的分数阶积分是完全相同的。</p>
+
+            <p>Riemann-Liouville 定义和 Caputo 定义的主要区别在于对常数求导的处理。关系式如下：</p>
+            <div class="math-block">$${}_{a}^{R}\mathscr{D}_t^v s(t) = \sum_{k=0}^{n-1} \frac{s^{(k)}(a)(t-a)^{k-v}}{\Gamma(k - v + 1)} + {}_{a}^{C}\mathscr{D}_t^v s(t)$$</div>
+            <p>由此可见，Caputo 定义的分数阶微积分对常数求导数是有界的（其值为零），而 Riemann-Liouville 定义的分数阶微积分对常数求导数通常是无界的（例如 $0<\alpha<1$ 时，${}_{0}^{R}\mathscr{D}_t^\alpha C = C \dfrac{t^{-\alpha}}{\Gamma(1-\alpha)}$，当 $t \to 0$ 时发散）。</p>
+        </section>
+
+        <!-- References -->
+        <section id="refs" class="references">
+            <h2>参考文献</h2>
+            <ol>
+                <li>薛定宇, 陈阳泉. 高等应用数学问题的 MATLAB 求解[M]. 北京: 清华大学出版社, 2004.</li>
+                <li>周激流, 蒲亦非, 廖科. 分数阶微积分原理及其在现代信号分析与处理中的应用[M]. 北京: 科学出版社, 2010.</li>
+                <li>薛定宇. 分数阶微积分学与分数阶控制[M]. 北京: 科学出版社, 2018.</li>
+            </ol>
+        </section>
+    </main>
+</body>
+</html>
