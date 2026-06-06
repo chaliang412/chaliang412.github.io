@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一个三元不定方程</title>
+
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                tags: 'ams'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --content-bg: #ffffff;
+            --text-color: #1a202c;
+            --border-color: #e2e8f0;
+            --accent-color: #2b6cb0;
+            --question-bg: #fffff0;
+            --question-border: #d69e2e;
+            --solution-bg: #f7fafc;
+            --solution-border: #4a5568;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            padding: 1rem;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2.5rem 3rem;
+            background-color: var(--content-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #1a202c;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        /* Math blocks with horizontal scroll for long equations */
+        .math-block {
+            overflow-x: auto;
+            margin: 1.2rem 0;
+            padding: 0.5rem 0;
+            /* Allow breaking long numbers if needed */
+            word-break: break-all;
+        }
+
+        /* Custom Blocks */
+        .env-block {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+
+        .env-block .env-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        .env-question {
+            background-color: var(--question-bg);
+            border-left-color: var(--question-border);
+        }
+
+        .env-question .env-title {
+            color: #975a16;
+        }
+
+        .env-solution {
+            background-color: var(--solution-bg);
+            border-left-color: var(--solution-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .env-solution .env-title {
+            color: #2d3748;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            main {
+                padding: 1.5rem 1rem;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>一个三元不定方程</h1>
+
+        <div class="env-block env-question">
+            <div class="env-title">问题</div>
+            <p>求解不定方程</p>
+            <div class="math-block">$$ \frac{a}{b+c}+\frac{b}{a+c}+\frac{c}{a+b}=4 $$</div>
+            <p>的最小正整数解。</p>
+        </div>
+
+        <div class="env-block env-solution">
+            <div class="env-title">解</div>
+            <p>通分原方程得到</p>
+            <div class="math-block">$$ a^3-3a^2b-3a^2c-3ab^2-5abc-3ac^2+b^3-3b^2c-3bc^2+c^3=0 $$</div>
+            
+            <p>置换变换</p>
+            <div class="math-block">$$ a=\frac{56-x+y}{56-14x},\quad b=\frac{56-x-y}{56-14x},\quad c=\frac{6x+28}{7x-28} $$</div>
+            
+            <p>得到椭圆曲线</p>
+            <div class="math-block">$$ E:y^2=x^3+109x^2+224x $$</div>
+            
+            <p>其逆变换为：</p>
+            <div class="math-block">$$ x=-\frac{28\left( a+b+2c \right)}{6a+6b-c},\quad y=\frac{364\left( a-b \right)}{6a+6b-c} $$</div>
+
+            <p>$E$ 有一有理点 $P\left( -100,260 \right)$，对其做椭圆曲线上的加法运算，可得到一系列有理解，代入 $(a,b,c)$ 可得原方程可能的解。因为我们需要的是最小正整数解，因此需要对解“约化”，即乘以三数分母的最小公倍数以去分母，如果解有一个为负，就需要继续加，直到结果符合条件。</p>
+
+            <p>以下为计算结果，一直到 $9P$ 我们才找到了最小解。</p>
+
+            <div class="math-block">
+            $$ \begin{aligned} &1P = (-100,\ 260) \rightarrow (a,b,c) = \left(\frac{2}{7},\ -\frac{1}{14},\ \frac{11}{14}\right) \xrightarrow{\text{约化}} (4,\ -1,\ 11) \\[6pt] &2P = \left(\frac{8836}{25},\ -\frac{950716}{125}\right) \rightarrow (a,b,c) = \left(\frac{1357}{840},\ -\frac{366}{245},\ \frac{1033}{1176}\right) \xrightarrow{\text{约化}} (9499,\ -8784,\ 5165) \\[6pt] &3P = \left(-\frac{731025}{11881},\ \frac{527529870}{1295029}\right) \rightarrow (a,b,c) = \left(\frac{975227}{1704542},\ -\frac{336013}{1063622},\ \frac{4053482}{5449843}\right) \\ &\quad \xrightarrow{\text{约化}} (679733219,\ -375326521,\ 883659076) \\[6pt] \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &4P = \left(\frac{561561391876}{8356702225},\ -\frac{687837762272090924}{763927933898375}\right) \rightarrow \\ &\quad (a,b,c) = \left(\frac{64375537326}{62482243915},\ -\frac{66892284997}{66560358480},\ \frac{69295307953}{71095040016}\right) \\ &\quad \xrightarrow{\text{约化}} (6696085890501216,\ -6531563383962071,\ 6334630576523495) \\[6pt] \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &5P = \left(-\frac{425869857827702500}{15192076294211881},\ \frac{448412887098983162164732300}{1872516697802137088411221}\right) \rightarrow \\ &\quad (a,b,c) = \left(\frac{132826132539336599}{184128998198450774},\ -\frac{13113991869578878}{37835009114259847},\ \frac{40958480975543891}{65508983481381734}\right) \\ &\quad \xrightarrow{\text{约化}} (5824662475191962424632819,\ -2798662276711559924688956,\ 5048384306267455380784631) \\[6pt] \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &6P = \left(\frac{252785840525963937198721}{13225347684085115955600},\ -\frac{343764653760831645784970282294394569}{1520934975898868459000385442296000}\right) \rightarrow \\ &\quad (a,b,c) = \Big(\frac{1262869893606655032359641}{1412814438402889060433160},\ -\frac{455681313378081801431401}{366738964125570802591560},\\ &\hspace{6em}\frac{1887024778310166869949126}{1399191148527364313634247}\Big) \xrightarrow{\text{约化}} (287663048897224554337446918344405429,\\ &\hspace{5em} -399866258624438737232493646244383709,\ 434021404091091140782000234591618320) \\[6pt] \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &7P = \Big(-\frac{1872773018543093075805479817148900}{163350615997049698719631653803161},\\ &\hspace{14em}\frac{211390151297491981533823798000243842339853402161620}{2087762847145230771938050768331341412318712353341}\Big) \rightarrow \\ &\quad (a,b,c) = \Big(\frac{485999570706736171999361687151362}{623660861246956197068644226999047},\ -\frac{97299499707397042459551895751641}{623488630867002224845371906564614},\\ &\frac{128131170448868594051599857623171}{340062084186904674899770096664054}\Big) \xrightarrow{\text{约化}} (3386928246329327259763849184510185031406211324804,\\ &-678266970930133923578916161648350398206354101381,\\ &\hspace{20em}1637627722378544613543242758851617912968156867151) \\[6pt] \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &8P = \Big(\frac{8304830821343520148948729081523501917420036}{1462178082526064533227321540886890051021025}\\ &\hspace{7em}-\frac{124668752376211382766812793520103329799089543359986485854396841484}{1768073864797815348625142542347514156118825216532230801892732625}\Big) \rightarrow \\ &\quad (a,b,c) = \Big(\frac{9725799744957614839011216987101754625826197}{11327874209838418438467575524552717247648160},\\ &-\frac{1534957039510080155063626001967221164131246}{298740362138731751304699903310656685729205},\ \frac{1745576369976748612001103416037960248713633}{330631335359131425236078854342915230641376}\Big) \\ &\xrightarrow{\text{约化}} (343258303254635343211175484588572430575289938927656972201563791,\\ &\hspace{5em}-2054217703980198940765993621567260834791816664149006217306067776,\\ &\hspace{10em}2110760649231325855047088974560468667532616164397520142622104465) \\ \end{aligned} $$
+            </div>
+
+            <div class="math-block">
+            $$ \begin{aligned} &9P = \Big(-\frac{66202368404229585264842409883878874707453676645038225}{13514400292716288512070907945002943352692578000406921},\\ &\quad \frac{58800835157308083307376751727347181330085672850296730351871748713307988700611210}{1571068668597978434556364707291896268838086945430031322196754390420280407346469}\Big) \rightarrow \\ &\qquad (a,b,c) = \Big(\frac{652194680638776317370751188686261401138670498641722947}{826345176768069653846031682295795260307016241032351542},\\ &\hspace{8em}\frac{72627067629030455550043880234643101653454184810448427}{385489402115598358968822193146517732601759618776822382},\\ &\hspace{10em}\frac{18811002229321433251069036843190834369329875858835562}{841819787025663175191882291647234536827567920526661363}\Big) \xrightarrow{\text{约化}} \\ &\quad (154476802108746166441951315019919837485664325669565431700026634898253202035277999,\\ &\hspace{2em}36875131794129999827197811565225474825492979968971970996283137471637224634055579,\\ &\hspace{3em}4373612677928697257861252602371390152816537558161613618621437993378423467772036) \end{aligned} $$
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
