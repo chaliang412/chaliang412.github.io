@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>复平面上的指数函数的线性叠加</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f9f9f9;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+      .panel {
+        background: white;
+        padding: 16px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        min-width: 300px;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.4rem;
+      }
+      canvas {
+        width: 100%;
+        height: 500px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .controls {
+        margin-top: 12px;
+      }
+      button {
+        margin: 4px;
+        padding: 6px 12px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .component {
+        display: flex;
+        gap: 8px;
+        margin: 8px 0;
+        align-items: center;
+      }
+      input[type="number"] {
+        width: 80px;
+        padding: 4px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      label {
+        font-weight: bold;
+        margin-right: 8px;
+      }
+      .speed-control {
+        margin-top: 12px;
+      }
+      .math-formula {
+        display: inline-block;
+        vertical-align: -2.5ex; /* 关键：对齐文本基线 */
+        line-height: 0; /* 防止撑高行高 */
+        fill: currentColor; /* 继承文字颜色 */
+        stroke: currentColor;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="panel">
+        <p>
+          函数形式：<svg
+            class="math-formula"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16.023ex"
+            height="4.899ex"
+            viewBox="0 -950 7082 2165.5"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            aria-hidden="true"
+            style=""
+          >
+            <defs>
+              <path
+                id="MJX-48-TEX-I-1D453"
+                d="M118 -162Q120 -162 124 -164T135 -167T147 -168Q160 -168 171 -155T187 -126Q197 -99 221 27T267 267T289 382V385H242Q195 385 192 387Q188 390 188 397L195 425Q197 430 203 430T250 431Q298 431 298 432Q298 434 307 482T319 540Q356 705 465 705Q502 703 526 683T550 630Q550 594 529 578T487 561Q443 561 443 603Q443 622 454 636T478 657L487 662Q471 668 457 668Q445 668 434 658T419 630Q412 601 403 552T387 469T380 433Q380 431 435 431Q480 431 487 430T498 424Q499 420 496 407T491 391Q489 386 482 386T428 385H372L349 263Q301 15 282 -47Q255 -132 212 -173Q175 -205 139 -205Q107 -205 81 -186T55 -132Q55 -95 76 -78T118 -61Q162 -61 162 -103Q162 -122 151 -136T127 -157L118 -162Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-N-28"
+                d="M94 250Q94 319 104 381T127 488T164 576T202 643T244 695T277 729T302 750H315H319Q333 750 333 741Q333 738 316 720T275 667T226 581T184 443T167 250T184 58T225 -81T274 -167T316 -220T333 -241Q333 -250 318 -250H315H302L274 -226Q180 -141 137 -14T94 250Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-I-1D461"
+                d="M26 385Q19 392 19 395Q19 399 22 411T27 425Q29 430 36 430T87 431H140L159 511Q162 522 166 540T173 566T179 586T187 603T197 615T211 624T229 626Q247 625 254 615T261 596Q261 589 252 549T232 470L222 433Q222 431 272 431H323Q330 424 330 420Q330 398 317 385H210L174 240Q135 80 135 68Q135 26 162 26Q197 26 230 60T283 144Q285 150 288 151T303 153H307Q322 153 322 145Q322 142 319 133Q314 117 301 95T267 48T216 6T155 -11Q125 -11 98 4T59 56Q57 64 57 83V101L92 241Q127 382 128 383Q128 385 77 385H26Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-N-29"
+                d="M60 749L64 750Q69 750 74 750H86L114 726Q208 641 251 514T294 250Q294 182 284 119T261 12T224 -76T186 -143T145 -194T113 -227T90 -246Q87 -249 86 -250H74Q66 -250 63 -250T58 -247T55 -238Q56 -237 66 -225Q221 -64 221 250T66 725Q56 737 55 738Q55 746 60 749Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-N-3D"
+                d="M56 347Q56 360 70 367H707Q722 359 722 347Q722 336 708 328L390 327H72Q56 332 56 347ZM56 153Q56 168 72 173H708Q722 163 722 153Q722 140 707 133H70Q56 140 56 153Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-LO-2211"
+                d="M60 948Q63 950 665 950H1267L1325 815Q1384 677 1388 669H1348L1341 683Q1320 724 1285 761Q1235 809 1174 838T1033 881T882 898T699 902H574H543H251L259 891Q722 258 724 252Q725 250 724 246Q721 243 460 -56L196 -356Q196 -357 407 -357Q459 -357 548 -357T676 -358Q812 -358 896 -353T1063 -332T1204 -283T1307 -196Q1328 -170 1348 -124H1388Q1388 -125 1381 -145T1356 -210T1325 -294L1267 -449L666 -450Q64 -450 61 -448Q55 -446 55 -439Q55 -437 57 -433L590 177Q590 178 557 222T452 366T322 544L56 909L55 924Q55 945 60 948Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-I-1D458"
+                d="M121 647Q121 657 125 670T137 683Q138 683 209 688T282 694Q294 694 294 686Q294 679 244 477Q194 279 194 272Q213 282 223 291Q247 309 292 354T362 415Q402 442 438 442Q468 442 485 423T503 369Q503 344 496 327T477 302T456 291T438 288Q418 288 406 299T394 328Q394 353 410 369T442 390L458 393Q446 405 434 405H430Q398 402 367 380T294 316T228 255Q230 254 243 252T267 246T293 238T320 224T342 206T359 180T365 147Q365 130 360 106T354 66Q354 26 381 26Q429 26 459 145Q461 153 479 153H483Q499 153 499 144Q499 139 496 130Q455 -11 378 -11Q333 -11 305 15T277 90Q277 108 280 121T283 145Q283 167 269 183T234 206T200 217T182 220H180Q168 178 159 139T145 81T136 44T129 20T122 7T111 -2Q98 -11 83 -11Q66 -11 57 -1T48 16Q48 26 85 176T158 471L195 616Q196 629 188 632T149 637H144Q134 637 131 637T124 640T121 647Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-I-1D450"
+                d="M34 159Q34 268 120 355T306 442Q362 442 394 418T427 355Q427 326 408 306T360 285Q341 285 330 295T319 325T330 359T352 380T366 386H367Q367 388 361 392T340 400T306 404Q276 404 249 390Q228 381 206 359Q162 315 142 235T121 119Q121 73 147 50Q169 26 205 26H209Q321 26 394 111Q403 121 406 121Q410 121 419 112T429 98T420 83T391 55T346 25T282 0T202 -11Q127 -11 81 37T34 159Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-N-65"
+                d="M28 218Q28 273 48 318T98 391T163 433T229 448Q282 448 320 430T378 380T406 316T415 245Q415 238 408 231H126V216Q126 68 226 36Q246 30 270 30Q312 30 342 62Q359 79 369 104L379 128Q382 131 395 131H398Q415 131 415 121Q415 117 412 108Q393 53 349 21T250 -11Q155 -11 92 58T28 218ZM333 275Q322 403 238 411H236Q228 411 220 410T195 402T166 381T143 340T127 274V267H333V275Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-N-69"
+                d="M69 609Q69 637 87 653T131 669Q154 667 171 652T188 609Q188 579 171 564T129 549Q104 549 87 564T69 609ZM247 0Q232 3 143 3Q132 3 106 3T56 1L34 0H26V46H42Q70 46 91 49Q100 53 102 60T104 102V205V293Q104 345 102 359T88 378Q74 385 41 385H30V408Q30 431 32 431L42 432Q52 433 70 434T106 436Q123 437 142 438T171 441T182 442H185V62Q190 52 197 50T232 46H255V0H247Z"
+              ></path>
+              <path
+                id="MJX-48-TEX-I-1D45D"
+                d="M23 287Q24 290 25 295T30 317T40 348T55 381T75 411T101 433T134 442Q209 442 230 378L240 387Q302 442 358 442Q423 442 460 395T497 281Q497 173 421 82T249 -10Q227 -10 210 -4Q199 1 187 11T168 28L161 36Q160 35 139 -51T118 -138Q118 -144 126 -145T163 -148H188Q194 -155 194 -157T191 -175Q188 -187 185 -190T172 -194Q170 -194 161 -194T127 -193T65 -192Q-5 -192 -24 -194H-32Q-39 -187 -39 -183Q-37 -156 -26 -148H-6Q28 -147 33 -136Q36 -130 94 103T155 350Q156 355 156 364Q156 405 131 405Q109 405 94 377T71 316T59 280Q57 278 43 278H29Q23 284 23 287ZM178 102Q200 26 252 26Q282 26 310 49T356 107Q374 141 392 215T411 325V331Q411 405 350 405Q339 405 328 402T306 393T286 380T269 365T254 350T243 336T235 326L232 322Q232 321 229 308T218 264T204 212Q178 106 178 102Z"
+              ></path>
+            </defs>
+            <g
+              stroke="currentColor"
+              fill="currentColor"
+              stroke-width="0"
+              transform="matrix(1 0 0 -1 0 0)"
+            >
+              <g data-mml-node="math">
+                <g data-mml-node="mi">
+                  <use xlink:href="#MJX-48-TEX-I-1D453"></use>
+                </g>
+                <g data-mml-node="mo" transform="translate(550, 0)">
+                  <use xlink:href="#MJX-48-TEX-N-28"></use>
+                </g>
+                <g data-mml-node="mi" transform="translate(939, 0)">
+                  <use xlink:href="#MJX-48-TEX-I-1D461"></use>
+                </g>
+                <g data-mml-node="mo" transform="translate(1300, 0)">
+                  <use xlink:href="#MJX-48-TEX-N-29"></use>
+                </g>
+                <g data-mml-node="mo" transform="translate(1966.8, 0)">
+                  <use xlink:href="#MJX-48-TEX-N-3D"></use>
+                </g>
+                <g data-mml-node="munder" transform="translate(3022.6, 0)">
+                  <g data-mml-node="mo">
+                    <use xlink:href="#MJX-48-TEX-LO-2211"></use>
+                  </g>
+                  <g
+                    data-mml-node="mi"
+                    transform="translate(537.8, -1107.7) scale(0.707)"
+                  >
+                    <use xlink:href="#MJX-48-TEX-I-1D458"></use>
+                  </g>
+                </g>
+                <g data-mml-node="msub" transform="translate(4633.2, 0)">
+                  <g data-mml-node="mi">
+                    <use xlink:href="#MJX-48-TEX-I-1D450"></use>
+                  </g>
+                  <g
+                    data-mml-node="mi"
+                    transform="translate(433, -150) scale(0.707)"
+                  >
+                    <use xlink:href="#MJX-48-TEX-I-1D458"></use>
+                  </g>
+                </g>
+                <g data-mml-node="msup" transform="translate(5484.6, 0)">
+                  <g data-mml-node="TeXAtom" data-mjx-texclass="ORD">
+                    <g data-mml-node="mi">
+                      <use xlink:href="#MJX-48-TEX-N-65"></use>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="TeXAtom"
+                    transform="translate(444, 413) scale(0.707)"
+                    data-mjx-texclass="ORD"
+                  >
+                    <g data-mml-node="TeXAtom" data-mjx-texclass="ORD">
+                      <g data-mml-node="mi">
+                        <use xlink:href="#MJX-48-TEX-N-69"></use>
+                      </g>
+                    </g>
+                    <g data-mml-node="msub" transform="translate(278, 0)">
+                      <g data-mml-node="mi">
+                        <use xlink:href="#MJX-48-TEX-I-1D45D"></use>
+                      </g>
+                      <g
+                        data-mml-node="mi"
+                        transform="translate(503, -150) scale(0.707)"
+                      >
+                        <use xlink:href="#MJX-48-TEX-I-1D458"></use>
+                      </g>
+                    </g>
+                    <g data-mml-node="mi" transform="translate(1199.4, 0)">
+                      <use xlink:href="#MJX-48-TEX-I-1D461"></use>
+                    </g>
+                  </g>
+                </g>
+              </g>
+            </g>
+          </svg>
+        </p>
+
+        <div id="components"></div>
+
+        <div class="controls">
+          <button onclick="addComponent()">+ 添加分量</button>
+          <button onclick="resetComponents()">重置示例</button>
+        </div>
+
+        <div class="speed-control">
+          <label for="speed">动画速度：</label>
+          <input
+            type="range"
+            id="speed"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value="1"
+            oninput="updateSpeed()"
+          />
+          <span id="speed-value">1.0x</span>
+        </div>
+
+        <div class="controls">
+          <button onclick="togglePlay()" id="playBtn">⏸ 暂停</button>
+          <button onclick="clearTrace()">清除轨迹</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <canvas id="plot" width="800" height="600"></canvas>
+      </div>
+    </div>
+
+    <script>
+      // ======================
+      // 全局状态
+      // ======================
+      let components = [
+        { c: 1.0, p: 1.0 },
+        { c: 0.6, p: 3.0 },
+      ];
+      let isPlaying = true;
+      let animationSpeed = 1.0;
+      let time = 0;
+      let trace = []; // 存储轨迹点 {x, y}
+      const maxTraceLength = 2000;
+
+      const canvas = document.getElementById("plot");
+      const ctx = canvas.getContext("2d");
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      // ======================
+      // UI 控制
+      // ======================
+      function addComponent() {
+        components.push({ c: 0.5, p: 2.0 });
+        renderComponents();
+      }
+
+      function removeComponent(index) {
+        if (components.length <= 1) return;
+        components.splice(index, 1);
+        renderComponents();
+      }
+
+      function updateComponent(index, field, value) {
+        components[index][field] = parseFloat(value) || 0;
+      }
+
+      function renderComponents() {
+        const container = document.getElementById("components");
+        container.innerHTML = "";
+        components.forEach((comp, i) => {
+          const div = document.createElement("div");
+          div.className = "component";
+          div.innerHTML = `
+          <span>${i + 1}:</span>
+          <label for="c${i}"><svg xmlns="http://www.w3.org/2000/svg" width="0.98ex" height="1.025ex" viewBox="0 -442 433 453" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style=""><defs><path id="MJX-49-TEX-I-1D450" d="M34 159Q34 268 120 355T306 442Q362 442 394 418T427 355Q427 326 408 306T360 285Q341 285 330 295T319 325T330 359T352 380T366 386H367Q367 388 361 392T340 400T306 404Q276 404 249 390Q228 381 206 359Q162 315 142 235T121 119Q121 73 147 50Q169 26 205 26H209Q321 26 394 111Q403 121 406 121Q410 121 419 112T429 98T420 83T391 55T346 25T282 0T202 -11Q127 -11 81 37T34 159Z"></path></defs><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="mi"><use xlink:href="#MJX-49-TEX-I-1D450"></use></g></g></g></svg>:</label>
+          <input type="number" id="c${i}" value="${comp.c}" step="0.1"
+                 oninput="updateComponent(${i}, 'c', this.value)">
+          <label for="p${i}"><svg xmlns="http://www.w3.org/2000/svg" width="1.138ex" height="1.439ex" viewBox="0 -442 503 636" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" style=""><defs><path id="MJX-50-TEX-I-1D45D" d="M23 287Q24 290 25 295T30 317T40 348T55 381T75 411T101 433T134 442Q209 442 230 378L240 387Q302 442 358 442Q423 442 460 395T497 281Q497 173 421 82T249 -10Q227 -10 210 -4Q199 1 187 11T168 28L161 36Q160 35 139 -51T118 -138Q118 -144 126 -145T163 -148H188Q194 -155 194 -157T191 -175Q188 -187 185 -190T172 -194Q170 -194 161 -194T127 -193T65 -192Q-5 -192 -24 -194H-32Q-39 -187 -39 -183Q-37 -156 -26 -148H-6Q28 -147 33 -136Q36 -130 94 103T155 350Q156 355 156 364Q156 405 131 405Q109 405 94 377T71 316T59 280Q57 278 43 278H29Q23 284 23 287ZM178 102Q200 26 252 26Q282 26 310 49T356 107Q374 141 392 215T411 325V331Q411 405 350 405Q339 405 328 402T306 393T286 380T269 365T254 350T243 336T235 326L232 322Q232 321 229 308T218 264T204 212Q178 106 178 102Z"></path></defs><g stroke="currentColor" fill="currentColor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="mi"><use xlink:href="#MJX-50-TEX-I-1D45D"></use></g></g></g></svg>:</label>
+          <input type="number" id="p${i}" value="${comp.p}" step="0.1"
+                 oninput="updateComponent(${i}, 'p', this.value)">
+          <button onclick="removeComponent(${i})" ${
+            components.length <= 1 ? "disabled" : ""
+          }>−</button>
+        `;
+          container.appendChild(div);
+        });
+      }
+
+      function resetComponents() {
+        components = [
+          { c: 1.0, p: 1.0 },
+          { c: 0.6, p: 3.0 },
+        ];
+        trace = [];
+        time = 0;
+        renderComponents();
+      }
+
+      function togglePlay() {
+        isPlaying = !isPlaying;
+        document.getElementById("playBtn").textContent = isPlaying
+          ? "⏸ 暂停"
+          : "▶ 播放";
+      }
+
+      function clearTrace() {
+        trace = [];
+      }
+
+      function updateSpeed() {
+        animationSpeed = parseFloat(document.getElementById("speed").value);
+        document.getElementById("speed-value").textContent =
+          animationSpeed.toFixed(1) + "x";
+      }
+
+      // ======================
+      // 数学与绘图
+      // ======================
+      function hsvToRgb(h, s, v) {
+        let r, g, b;
+        const i = Math.floor(h * 6);
+        const f = h * 6 - i;
+        const p = v * (1 - s);
+        const q = v * (1 - f * s);
+        const t = v * (1 - (1 - f) * s);
+        switch (i % 6) {
+          case 0:
+            r = v;
+            g = t;
+            b = p;
+            break;
+          case 1:
+            r = q;
+            g = v;
+            b = p;
+            break;
+          case 2:
+            r = p;
+            g = v;
+            b = t;
+            break;
+          case 3:
+            r = p;
+            g = q;
+            b = v;
+            break;
+          case 4:
+            r = t;
+            g = p;
+            b = v;
+            break;
+          case 5:
+            r = v;
+            g = p;
+            b = q;
+            break;
+        }
+        return `rgb(${Math.round(r * 255)}, ${Math.round(
+          g * 255
+        )}, ${Math.round(b * 255)})`;
+      }
+
+      function drawCircle(cx, cy, radius, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function drawArrow(x1, y1, x2, y2, color) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        if (len === 0) return;
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // 箭头头（简化）
+        const angle = Math.atan2(dy, dx);
+        const headLen = 8;
+        ctx.save();
+        ctx.translate(x2, y2);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-headLen, -headLen / 2);
+        ctx.lineTo(-headLen, headLen / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function animate() {
+        if (isPlaying) {
+          time += 0.05 * animationSpeed;
+        }
+
+        // 清屏
+        ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+        const centerX = canvas.clientWidth / 2;
+        const centerY = canvas.clientHeight / 2;
+        const scale =
+          (Math.min(centerX, centerY) * 0.8) /
+          (components.reduce((sum, c) => sum + Math.abs(c.c), 0) || 1);
+
+        // 计算所有分量
+        let currentX = 0,
+          currentY = 0;
+        const points = [];
+
+        for (let i = 0; i < components.length; i++) {
+          const { c, p } = components[i];
+          const angle = time * p;
+          const dx = c * Math.cos(angle);
+          const dy = c * Math.sin(angle);
+
+          // 绘制旋转圆
+          const cx = centerX + currentX * scale;
+          const cy = centerY - currentY * scale; // y轴反向（数学坐标）
+          drawCircle(cx, cy, Math.abs(c) * scale, "#aaa");
+
+          // 更新终点
+          currentX += dx;
+          currentY += dy;
+          points.push({ x: currentX, y: currentY });
+
+          // 绘制箭头
+          const startX = centerX + (currentX - dx) * scale;
+          const startY = centerY - (currentY - dy) * scale;
+          const endX = centerX + currentX * scale;
+          const endY = centerY - currentY * scale;
+
+          const hue = i / Math.max(1, components.length - 1);
+          const color = hsvToRgb(hue, 0.8, 0.8);
+          drawArrow(startX, startY, endX, endY, color);
+        }
+
+        // 当前合成点
+        const finalX = centerX + currentX * scale;
+        const finalY = centerY - currentY * scale;
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        ctx.arc(finalX, finalY, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 轨迹
+        trace.push({ x: currentX, y: currentY });
+        if (trace.length > maxTraceLength) trace.shift();
+
+        if (trace.length > 1) {
+          ctx.strokeStyle = "#9999FF";//steelblue
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(
+            centerX + trace[0].x * scale,
+            centerY - trace[0].y * scale
+          );
+          for (let i = 1; i < trace.length; i++) {
+            ctx.lineTo(
+              centerX + trace[i].x * scale,
+              centerY - trace[i].y * scale
+            );
+          }
+          ctx.stroke();
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      // ======================
+      // 初始化
+      // ======================
+      renderComponents();
+      animate();
+    </script>
+  </body>
+</html>
