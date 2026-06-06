@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Frenet 标架演示（终极优化版）</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        /* UI 面板样式 */
+        .panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            transition: opacity 0.3s;
+        }
+        #control-bar {
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: auto;
+            min-width: 300px;
+            justify-content: center;
+        }
+        #legend {
+            top: 20px;
+            right: 20px;
+            font-size: 13px;
+            user-select: none;
+        }
+        /* 控件样式 */
+        button {
+            border: none;
+            background: #1e40af;
+            color: white;
+            border-radius: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        #play-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        #reset-btn {
+            background: #4b5563;
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+        #reset-btn:hover { background: #374151; }
+        
+        input[type=range] {
+            width: 220px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #e5e7eb;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #2563eb;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+            color: #374151;
+        }
+        .color-box {
+            width: 14px;
+            height: 14px;
+            margin-right: 8px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .label-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="legend" class="panel">
+        <div class="legend-item"><div class="color-box" style="background:#9999FF;"></div> 曲线 r(t)</div>
+        <div class="legend-item"><div class="color-box" style="background:#f00;"></div> 切向量 T (Tangent)</div>
+        <div class="legend-item"><div class="color-box" style="background:#0f0;"></div> 法向量 N (Normal)</div>
+        <div class="legend-item"><div class="color-box" style="background:#00f;"></div> 副法向量 B (Binormal)</div>
+        <div class="legend-item"><div class="color-box" style="background:#ff0;"></div> 当前位置 P</div>
+        <div class="label-text">Frenet-Serret 标架</div>
+    </div>
+
+    <div id="control-bar" class="panel">
+        <button id="reset-btn" title="重置视角">⟲</button>
+        <input type="range" id="s-slider" min="0" max="1000" value="0" step="1" />
+        <button id="play-btn" title="播放/暂停">▶</button>
+    </div>
+
+    <script>
+        // ========== 1. 曲线定义修正与优化 ==========
+        // 使用经典的螺旋线，X, Y 为圆周运动，Z 随 t 线性增加
+        // 注意：这里 z = t * 0.5 是为了压缩Z轴高度，使其在视图中比例更协调
+        function rawCurve(t) {
+            return new THREE.Vector3(
+                Math.cos(t) * 2, // 半径为2
+                Math.sin(2*t) * 2, 
+                t * 0.5
+            );
+        }
+        const tMax = 6 * Math.PI; // 增加圈数到3圈，展示更完整的螺旋
+        // ==========================================
+
+        let scene, camera, renderer, controls;
+        let curveObject;
+        let arcLengthData = null;
+        let isPlaying = false;
+        let animationTime = 0;
+
+        // === 资源缓存 (优化 GC) ===
+        let dynamicGrid = null;
+        let xAxis = null, yAxis = null, zAxis = null;
+        let lastAxisSize = 0;
+        let axesUpdateNeeded = false;
+        
+        // Frenet 标架对象缓存
+        let frameGroup = null;
+        let framePoint = null;
+        let arrowT = null, arrowN = null, arrowB = null;
+
+        // 初始相机状态，用于重置
+        let initialCameraPosition = new THREE.Vector3();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8fafc); // 极淡的蓝灰色背景，护眼且专业
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            const container = document.getElementById('canvas-container');
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                logarithmicDepthBuffer: true, // 深度缓冲优化，防止远处线条闪烁
+                alpha: false 
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制最大像素比，优化性能
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = true;
+            controls.maxDistance = 100;
+
+            // 光照
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            // 初始化数据
+            precomputeArcLength(3000); // 增加采样率
+            createCurveGeometry();
+            createFrenetFrameObjects(); // ✅ 预创建标架对象
+            
+            fitCameraToCurve();
+            
+            // 保存初始位置
+            initialCameraPosition.copy(camera.position);
+
+            // 标记需要更新网格
+            axesUpdateNeeded = true;
+
+            // === 事件监听 ===
+            window.addEventListener('resize', onWindowResize);
+            
+            // 监听滚轮，强制更新网格，提升响应感
+            controls.addEventListener('change', () => {
+                if(axesUpdateNeeded === false) axesUpdateNeeded = true;
+            });
+        }
+
+        // ✅ 优化：只创建一次 Frenet 标架的几何体
+        function createFrenetFrameObjects() {
+            frameGroup = new THREE.Group();
+            
+            // 黄色球体 (当前点)
+            const sphereGeo = new THREE.SphereGeometry(0.12, 16, 16);
+            const sphereMat = new THREE.MeshBasicMaterial({ 
+                color: 0xffcc00, 
+                depthTest: false // 始终在最前
+            });
+            framePoint = new THREE.Mesh(sphereGeo, sphereMat);
+            framePoint.renderOrder = 999;
+            frameGroup.add(framePoint);
+
+            // 箭头辅助器
+            // 参数: dir, origin, length, color, headLength, headWidth
+            arrowT = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1.2, 0xff0000, 0.3, 0.15);
+            arrowN = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(), 1.0, 0x00aa00, 0.25, 0.12);
+            arrowB = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(), 0.8, 0x0066ff, 0.2, 0.1);
+
+            // 设置高渲染顺序
+            arrowT.line.material.depthTest = false;
+            arrowT.cone.material.depthTest = false;
+            arrowN.line.material.depthTest = false;
+            arrowN.cone.material.depthTest = false;
+            arrowB.line.material.depthTest = false;
+            arrowB.cone.material.depthTest = false;
+
+            arrowT.renderOrder = 998;
+            arrowN.renderOrder = 998;
+            arrowB.renderOrder = 998;
+
+            frameGroup.add(arrowT);
+            frameGroup.add(arrowN);
+            frameGroup.add(arrowB);
+
+            scene.add(frameGroup);
+        }
+
+        // ✅ 优化：仅更新位置和方向，不创建新对象
+        function updateFrenetFrame(normalizedS) {
+            const s = normalizedS * arcLengthData.totalLength;
+            const t = getTFromS(s);
+            const r = rawCurve(t);
+
+            // 计算导数
+            const dr = derivative(rawCurve, t);
+            const T = dr.clone().normalize();
+
+            const d2r = derivative(u => derivative(rawCurve, u), t);
+            let N_temp = d2r.clone().sub(T.clone().multiplyScalar(d2r.dot(T)));
+            let N, B;
+
+            if (N_temp.lengthSq() < 1e-8) { // 使用 lengthSq() 避免开方
+                N = new THREE.Vector3(1, 0, 0);
+                if (Math.abs(T.dot(N)) > 0.9) N.set(0, 1, 0);
+                N.sub(T.clone().multiplyScalar(T.dot(N))).normalize();
+            } else {
+                N = N_temp.normalize();
+            }
+
+            B = new THREE.Vector3().crossVectors(T, N).normalize();
+            N.crossVectors(B, T).normalize(); // 重新正交化以保证精度
+
+            // 更新位置
+            // 稍微偏移一点点防止与曲线完全重叠导致的深度冲突
+            const offset = N.clone().multiplyScalar(0.01); 
+            const pos = r.clone().add(offset);
+            
+            framePoint.position.copy(pos);
+            
+            // 更新箭头
+            arrowT.position.copy(pos);
+            arrowT.setDirection(T);
+
+            arrowN.position.copy(pos);
+            arrowN.setDirection(N);
+
+            arrowB.position.copy(pos);
+            arrowB.setDirection(B);
+
+            // 更新UI
+            document.getElementById('s-slider').value = Math.round(normalizedS * 1000);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            axesUpdateNeeded = true;
+        }
+
+        function fitCameraToCurve() {
+            const points = arcLengthData.tValues.map(t => rawCurve(t));
+            const bbox = new THREE.Box3().setFromPoints(points);
+            const center = bbox.getCenter(new THREE.Vector3());
+            const size = bbox.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // 调整相机位置，使其看向中心
+            const distance = maxDim * 2.5; 
+            camera.position.set(center.x + distance * 0.5, center.y + distance * 0.5, center.z + distance * 0.8);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // ✅ 动态网格逻辑
+        function updateAxesAndGrid() {
+            if (!axesUpdateNeeded) return;
+
+            const cameraPos = camera.position;
+            // 使用相机到 controls.target 的距离作为基准，而不是单纯的绝对坐标
+            // 这样无论场景在哪里，网格都能适应缩放级别
+            const distance = cameraPos.distanceTo(controls.target);
+            const minDistance = 5;
+            const useDistance = Math.max(distance, minDistance);
+
+            const fovRad = camera.fov * (Math.PI / 180);
+            const halfHeight = useDistance * Math.tan(fovRad / 2);
+            const halfWidth = halfHeight * camera.aspect;
+            
+            // 网格范围略大于视锥体
+            const viewSize = Math.max(halfWidth, halfHeight) * 1.5;
+            
+            // 寻找最近的 5 的倍数，避免网格跳动
+            const targetAxisSize = Math.ceil(viewSize / 5) * 5;
+
+            // 只有当计算出的尺寸与上次差异超过阈值，或者初次渲染时才更新
+            // 这里稍微放宽阈值 (0.1) 减少频繁重建，同时保留灵敏度
+            if (Math.abs(targetAxisSize - lastAxisSize) > lastAxisSize * 0.1 || lastAxisSize === 0) {
+                
+                // --- 清理旧资源 ---
+                const disposeObj = (obj) => {
+                    if (!obj) return;
+                    scene.remove(obj);
+                    obj.geometry.dispose();
+                    if (obj.material) obj.material.dispose();
+                };
+                disposeObj(xAxis);
+                disposeObj(yAxis);
+                disposeObj(zAxis);
+                disposeObj(dynamicGrid);
+
+                // --- 创建新网格 ---
+                const gridSize = targetAxisSize * 2;
+                const divisions = Math.max(20, Math.floor(gridSize / 2)); // 增加网格密度
+                
+                // 中心对齐的网格
+                dynamicGrid = new THREE.GridHelper(gridSize, divisions, 0xcbd5e1, 0xe2e8f0);
+                dynamicGrid.position.y = -targetAxisSize/2; // 网格下移，放在曲线下方可能的位置
+                // 这里我们简单处理，将网格放在世界中心下方一点点，或者就在中心
+                // 为了适应三维空间，我们创建一个在 XY 平面的网格
+                dynamicGrid.position.set(0, 0, 0); 
+                
+                scene.add(dynamicGrid);
+
+                // --- 创建坐标轴 ---
+                const createAxis = (endVec, color) => {
+                    const geom = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(0, 0, 0),
+                        endVec
+                    ]);
+                    const mat = new THREE.LineBasicMaterial({
+                        color: color,
+                        linewidth: 2, // 注意：WebGL限制，大多数浏览器 linewidth 只能是 1
+                        depthTest: true,
+                        depthWrite: true,
+                        polygonOffset: true,
+                        polygonOffsetFactor: -2,
+                        polygonOffsetUnits: -2
+                    });
+                    const line = new THREE.Line(geom, mat);
+                    line.renderOrder = 10;
+                    return line;
+                };
+
+                // 黑色坐标轴
+                xAxis = createAxis(new THREE.Vector3(targetAxisSize, 0, 0), 0x333333);
+                yAxis = createAxis(new THREE.Vector3(0, targetAxisSize, 0), 0x333333);
+                zAxis = createAxis(new THREE.Vector3(0, 0, targetAxisSize), 0x333333);
+
+                scene.add(xAxis);
+                scene.add(yAxis);
+                scene.add(zAxis);
+                
+                lastAxisSize = targetAxisSize;
+            }
+            axesUpdateNeeded = false;
+        }
+
+        // === 数学工具函数 ===
+        function precomputeArcLength(numSamples = 2000) {
+            const tValues = [], sValues = [];
+            let s = 0;
+            tValues.push(0); sValues.push(0);
+            for (let i = 1; i <= numSamples; i++) {
+                const tPrev = (i - 1) / numSamples * tMax;
+                const tCurr = i / numSamples * tMax;
+                const pPrev = rawCurve(tPrev);
+                const pCurr = rawCurve(tCurr);
+                s += pPrev.distanceTo(pCurr);
+                tValues.push(tCurr);
+                sValues.push(s);
+            }
+            arcLengthData = { tValues, sValues, totalLength: s };
+        }
+
+        function getTFromS(s) {
+            const { tValues, sValues, totalLength } = arcLengthData;
+            s = Math.max(0, Math.min(s, totalLength));
+            
+            // 二分查找优化 (虽然数组小，线性也快，但二分更优雅)
+            let low = 0, high = sValues.length - 1;
+            while (low < high) {
+                const mid = Math.floor((low + high) / 2);
+                if (sValues[mid] < s) low = mid + 1;
+                else high = mid;
+            }
+            let i = (sValues[low] >= s) ? low : low - 1;
+            if (i < 0) i = 0;
+            if (i >= sValues.length - 1) return tValues[tValues.length - 1];
+
+            const s0 = sValues[i], s1 = sValues[i + 1];
+            const t0 = tValues[i], t1 = tValues[i + 1];
+            const ratio = (s - s0) / (s1 - s0);
+            return t0 + ratio * (t1 - t0);
+        }
+
+        function derivative(func, x, h = 1e-4) {
+            const fxh = func(x + h);
+            const fxmh = func(x - h);
+            return fxh.sub(fxmh).multiplyScalar(0.5 / h);
+        }
+
+        function createCurveGeometry() {
+            const points = arcLengthData.tValues.map(t => rawCurve(t));
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            curveObject = new THREE.Line(
+                geometry,
+                new THREE.LineBasicMaterial({ 
+                    color: 0x6366f1, // Indigo-500
+                    linewidth: 2,
+                    depthTest: true,
+                    depthWrite: true,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -1
+                })
+            );
+            curveObject.renderOrder = 5;
+            scene.add(curveObject);
+        }
+
+        // === 动画循环 ===
+        function animate() {
+            requestAnimationFrame(animate);
+            updateAxesAndGrid();
+            controls.update();
+
+            if (isPlaying) {
+                const now = performance.now();
+                // 播放速度控制：8秒跑完全程
+                const duration = 8000;
+                // 计算当前进度的增量，这里简化处理，直接用绝对时间模
+                const progress = (now % duration) / duration;
+                updateFrenetFrame(progress);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const btn = document.getElementById('play-btn');
+            btn.textContent = isPlaying ? '⏸' : '▶';
+        }
+
+        // 程序入口
+        window.onload = () => {
+            init();
+            animate();
+
+            // 控件绑定
+            const slider = document.getElementById('s-slider');
+            slider.addEventListener('input', (e) => {
+                if (isPlaying) togglePlay();
+                // value 是 0-1000
+                updateFrenetFrame(e.target.value / 1000);
+            });
+
+            document.getElementById('play-btn').addEventListener('click', togglePlay);
+            
+            document.getElementById('reset-btn').addEventListener('click', () => {
+                // 平滑重置相机
+                const duration = 1000;
+                const startPos = camera.position.clone();
+                const startTarget = controls.target.clone();
+                const endPos = initialCameraPosition.clone();
+                const endTarget = new THREE.Vector3(0,0,0); // 假设中心近似为0
+                
+                const startTime = performance.now();
+                
+                function resetAnim(time) {
+                    const elapsed = time - startTime;
+                    const t = Math.min(elapsed / duration, 1);
+                    // 缓动函数 easeOutCubic
+                    const ease = 1 - Math.pow(1 - t, 3);
+                    
+                    camera.position.lerpVectors(startPos, endPos, ease);
+                    controls.target.lerpVectors(startTarget, endTarget, ease);
+                    controls.update();
+                    
+                    if (t < 1) requestAnimationFrame(resetAnim);
+                }
+                requestAnimationFrame(resetAnim);
+            });
+        };
+    </script>
+</body>
+</html>
