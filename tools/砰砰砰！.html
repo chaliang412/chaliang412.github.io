@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方块碰撞模拟器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #a8c0ff, #3f4c6b);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .simulation-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .canvas-container {
+            flex: 2;
+            min-width: 600px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls-container {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(240, 240, 255, 0.7);
+            border-radius: 10px;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid rgba(44, 62, 80, 0.3);
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #3498db;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+        
+        .value-display {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            background: #3498db;
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            flex: 1;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #resetBtn {
+            background: #e74c3c;
+        }
+        
+        #resetBtn:hover {
+            background: #c0392b;
+        }
+        
+        #pauseBtn {
+            background: #f39c12;
+        }
+        
+        #pauseBtn:hover {
+            background: #d35400;
+        }
+        
+        .stats-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .stat-box {
+            flex: 1;
+            min-width: 150px;
+            background: rgba(240, 240, 255, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        
+        .info-box {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-box h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .info-box p {
+            line-height: 1.5;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .legend {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            gap: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        
+        @media (max-width: 768px) {
+            .simulation-container {
+                flex-direction: column;
+            }
+            
+            .canvas-container {
+                min-width: 100%;
+            }
+            
+            .stats {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>方块碰撞模拟器</h1>
+            <p class="subtitle">模拟两个方块在光滑水平面上的弹性碰撞，观察动量守恒和能量守恒</p>
+        </header>
+        
+        <div class="simulation-container">
+            <div class="canvas-container">
+                <h2>碰撞模拟</h2>
+                <canvas id="collisionCanvas" width="800" height="400"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff0000;"></div>
+                        <span>低速</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffff00;"></div>
+                        <span>中速</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff00;"></div>
+                        <span>高速</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="controls-container">
+                <h2>参数控制</h2>
+                
+                <div class="control-group">
+                    <h3>方块1 (红色)</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>质量 (kg)</span>
+                            <span class="value-display" id="mass1Value">1</span>
+                        </div>
+                        <input type="range" id="mass1" min="1" max="10" value="1" step="0.1">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>初速度 (m/s)</span>
+                            <span class="value-display" id="velocity1Value">2</span>
+                        </div>
+                        <input type="range" id="velocity1" min="-5" max="5" value="2" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>方块2 (蓝色)</h3>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>质量 (kg)</span>
+                            <span class="value-display" id="mass2Value">3</span>
+                        </div>
+                        <input type="range" id="mass2" min="1" max="10" value="3" step="0.1">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>初速度 (m/s)</span>
+                            <span class="value-display" id="velocity2Value">-1</span>
+                        </div>
+                        <input type="range" id="velocity2" min="-5" max="5" value="-1" step="0.1">
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="startBtn">开始模拟</button>
+                    <button id="resetBtn">重置模拟</button>
+                    <button id="pauseBtn">暂停/继续</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-container">
+            <h2>碰撞统计</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">方块间碰撞次数</div>
+                    <div class="stat-value" id="blockCollisions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">与墙壁碰撞次数</div>
+                    <div class="stat-value" id="wallCollisions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">总碰撞次数</div>
+                    <div class="stat-value" id="totalCollisions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">系统总动量</div>
+                    <div class="stat-value" id="totalMomentum">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">系统总动能</div>
+                    <div class="stat-value" id="totalEnergy">0</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>物理原理说明</h3>
+            <p>这个模拟展示了两个方块在光滑水平面上的弹性碰撞。在弹性碰撞中，系统同时满足动量守恒和动能守恒。</p>
+            <p>动量守恒公式: m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'</p>
+            <p>动能守恒公式: ½m₁v₁² + ½m₂v₂² = ½m₁v₁'² + ½m₂v₂'²</p>
+            <p>通过调整方块的质量和初速度，可以观察到不同的碰撞行为。</p>
+            <p>速度矢量用颜色表示：红色表示低速，黄色表示中速，绿色表示高速。</p>
+        </div>
+    </div>
+
+    <script>
+        // 获取Canvas和上下文
+        const canvas = document.getElementById('collisionCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 获取控制元素
+        const mass1Slider = document.getElementById('mass1');
+        const mass1Value = document.getElementById('mass1Value');
+        const velocity1Slider = document.getElementById('velocity1');
+        const velocity1Value = document.getElementById('velocity1Value');
+        
+        const mass2Slider = document.getElementById('mass2');
+        const mass2Value = document.getElementById('mass2Value');
+        const velocity2Slider = document.getElementById('velocity2');
+        const velocity2Value = document.getElementById('velocity2Value');
+        
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        
+        // 获取统计元素
+        const blockCollisionsEl = document.getElementById('blockCollisions');
+        const wallCollisionsEl = document.getElementById('wallCollisions');
+        const totalCollisionsEl = document.getElementById('totalCollisions');
+        const totalMomentumEl = document.getElementById('totalMomentum');
+        const totalEnergyEl = document.getElementById('totalEnergy');
+        
+        // 方块对象
+        const blocks = [
+            {
+                x: 150,
+                y: canvas.height / 2 - 40,
+                width: 80,
+                height: 80,
+                mass: 1,
+                velocity: 2,
+                color: '#FF5252'
+            },
+            {
+                x: 400,
+                y: canvas.height / 2 - 40,
+                width: 80,
+                height: 80,
+                mass: 3,
+                velocity: -1,
+                color: '#2196F3'
+            }
+        ];
+        
+        // 墙壁位置
+        const leftWall = 50;
+        const rightWall = canvas.width - 50;
+        
+        // 模拟状态
+        let isRunning = false;
+        let isPaused = false;
+        let animationId;
+        
+        // 碰撞计数
+        let blockCollisions = 0;
+        let wallCollisions = 0;
+        let totalCollisions = 0;
+        
+        // 根据速度获取颜色
+        function getVelocityColor(velocity) {
+            const absVelocity = Math.abs(velocity);
+            const maxSpeed = 5;
+            const ratio = Math.min(absVelocity / maxSpeed, 1);
+            
+            if (ratio < 0.5) {
+                // 红色到黄色
+                const r = 255;
+                const g = Math.floor(255 * (ratio * 2));
+                return `rgb(${r}, ${g}, 0)`;
+            } else {
+                // 黄色到绿色
+                const r = Math.floor(255 * (1 - (ratio - 0.5) * 2));
+                const g = 255;
+                return `rgb(${r}, ${g}, 0)`;
+            }
+        }
+        
+        // 更新滑块显示
+        function updateSliders() {
+            mass1Value.textContent = mass1Slider.value;
+            velocity1Value.textContent = velocity1Slider.value;
+            
+            mass2Value.textContent = mass2Slider.value;
+            velocity2Value.textContent = velocity2Slider.value;
+        }
+        
+        // 初始化方块参数
+        function initBlocks() {
+            blocks[0].mass = parseFloat(mass1Slider.value);
+            blocks[0].velocity = parseFloat(velocity1Slider.value);
+            
+            blocks[1].mass = parseFloat(mass2Slider.value);
+            blocks[1].velocity = parseFloat(velocity2Slider.value);
+            
+            // 重置方块位置
+            blocks[0].x = 150;
+            blocks[1].x = 400;
+            
+            // 重置碰撞计数
+            blockCollisions = 0;
+            wallCollisions = 0;
+            totalCollisions = 0;
+            updateStats();
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            blockCollisionsEl.textContent = blockCollisions;
+            wallCollisionsEl.textContent = wallCollisions;
+            totalCollisionsEl.textContent = totalCollisions;
+            
+            // 计算总动量和总动能
+            const totalMomentum = blocks[0].mass * blocks[0].velocity + blocks[1].mass * blocks[1].velocity;
+            const totalEnergy = 0.5 * blocks[0].mass * blocks[0].velocity ** 2 + 
+                               0.5 * blocks[1].mass * blocks[1].velocity ** 2;
+            
+            totalMomentumEl.textContent = totalMomentum.toFixed(2);
+            totalEnergyEl.textContent = totalEnergy.toFixed(2);
+        }
+        
+        // 绘制场景
+        function drawScene() {
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            ctx.fillStyle = 'rgba(240, 248, 255, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制墙壁
+            ctx.fillStyle = 'rgba(100, 100, 150, 0.7)';
+            ctx.fillRect(leftWall - 10, 0, 10, canvas.height);
+            ctx.fillRect(rightWall, 0, 10, canvas.height);
+            
+            // 绘制地面参考线
+            ctx.strokeStyle = 'rgba(200, 200, 200, 0.5)';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2 + 50);
+            ctx.lineTo(canvas.width, canvas.height / 2 + 50);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制方块
+            blocks.forEach(block => {
+                // 绘制方块主体
+                ctx.fillStyle = block.color;
+                ctx.fillRect(block.x, block.y, block.width, block.height);
+                
+                // 绘制边框
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(block.x, block.y, block.width, block.height);
+                
+                // 绘制速度矢量
+                const velocityColor = getVelocityColor(block.velocity);
+                ctx.strokeStyle = velocityColor;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (block.velocity > 0) {
+                    // 向右的速度矢量
+                    ctx.moveTo(block.x + block.width, block.y + block.height / 2);
+                    ctx.lineTo(block.x + block.width + 20 + Math.abs(block.velocity) * 5, block.y + block.height / 2);
+                    ctx.stroke();
+                    
+                    // 绘制箭头
+                    ctx.fillStyle = velocityColor;
+                    ctx.beginPath();
+                    ctx.moveTo(block.x + block.width + 20 + Math.abs(block.velocity) * 5, block.y + block.height / 2);
+                    ctx.lineTo(block.x + block.width + 10 + Math.abs(block.velocity) * 5, block.y + block.height / 2 - 5);
+                    ctx.lineTo(block.x + block.width + 10 + Math.abs(block.velocity) * 5, block.y + block.height / 2 + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (block.velocity < 0) {
+                    // 向左的速度矢量
+                    ctx.moveTo(block.x, block.y + block.height / 2);
+                    ctx.lineTo(block.x - 20 - Math.abs(block.velocity) * 5, block.y + block.height / 2);
+                    ctx.stroke();
+                    
+                    // 绘制箭头
+                    ctx.fillStyle = velocityColor;
+                    ctx.beginPath();
+                    ctx.moveTo(block.x - 20 - Math.abs(block.velocity) * 5, block.y + block.height / 2);
+                    ctx.lineTo(block.x - 10 - Math.abs(block.velocity) * 5, block.y + block.height / 2 - 5);
+                    ctx.lineTo(block.x - 10 - Math.abs(block.velocity) * 5, block.y + block.height / 2 + 5);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                // 绘制质量和速度标签
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(`质量: ${block.mass}kg`, block.x + 5, block.y - 15);
+                ctx.fillText(`速度: ${block.velocity.toFixed(1)}m/s`, block.x + 5, block.y + block.height + 25);
+            });
+            
+            // 绘制碰撞计数
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(`方块间碰撞: ${blockCollisions}`, 20, 30);
+            ctx.fillText(`墙壁碰撞: ${wallCollisions}`, 20, 60);
+            ctx.fillText(`总碰撞: ${totalCollisions}`, 20, 90);
+        }
+        
+        // 更新方块位置
+        function updateBlocks() {
+            blocks.forEach(block => {
+                block.x += block.velocity;
+                
+                // 检测与墙壁碰撞
+                if (block.x <= leftWall) {
+                    block.x = leftWall;
+                    block.velocity = -block.velocity;
+                    wallCollisions++;
+                    totalCollisions++;
+                    updateStats();
+                } else if (block.x + block.width >= rightWall) {
+                    block.x = rightWall - block.width;
+                    block.velocity = -block.velocity;
+                    wallCollisions++;
+                    totalCollisions++;
+                    updateStats();
+                }
+            });
+            
+            // 检测方块间碰撞
+            const block1 = blocks[0];
+            const block2 = blocks[1];
+            
+            if (block1.x + block1.width >= block2.x && 
+                block1.x <= block2.x + block2.width) {
+                
+                // 计算碰撞后的速度 (弹性碰撞公式)
+                const v1 = ((block1.mass - block2.mass) * block1.velocity + 
+                            2 * block2.mass * block2.velocity) / 
+                           (block1.mass + block2.mass);
+                
+                const v2 = ((block2.mass - block1.mass) * block2.velocity + 
+                            2 * block1.mass * block1.velocity) / 
+                           (block1.mass + block2.mass);
+                
+                block1.velocity = v1;
+                block2.velocity = v2;
+                
+                // 防止方块重叠
+                if (block1.velocity > 0 && block2.velocity < 0) {
+                    block1.x = block2.x - block1.width - 1;
+                } else if (block1.velocity < 0 && block2.velocity > 0) {
+                    block2.x = block1.x + block1.width + 1;
+                }
+                
+                blockCollisions++;
+                totalCollisions++;
+                updateStats();
+            }
+        }
+        
+        // 动画循环
+        function animate() {
+            if (!isPaused) {
+                updateBlocks();
+                drawScene();
+            }
+            
+            if (isRunning) {
+                animationId = requestAnimationFrame(animate);
+            }
+        }
+        
+        // 开始模拟
+        function startSimulation() {
+            if (!isRunning) {
+                isRunning = true;
+                isPaused = false;
+                initBlocks();
+                animate();
+            }
+        }
+        
+        // 重置模拟
+        function resetSimulation() {
+            isRunning = false;
+            isPaused = false;
+            cancelAnimationFrame(animationId);
+            initBlocks();
+            drawScene();
+        }
+        
+        // 暂停/继续模拟
+        function togglePause() {
+            if (isRunning) {
+                isPaused = !isPaused;
+                if (!isPaused) {
+                    animate();
+                }
+            }
+        }
+        
+        // 事件监听
+        startBtn.addEventListener('click', startSimulation);
+        resetBtn.addEventListener('click', resetSimulation);
+        pauseBtn.addEventListener('click', togglePause);
+        
+        // 滑块事件
+        mass1Slider.addEventListener('input', updateSliders);
+        velocity1Slider.addEventListener('input', updateSliders);
+        mass2Slider.addEventListener('input', updateSliders);
+        velocity2Slider.addEventListener('input', updateSliders);
+        
+        // 初始化
+        updateSliders();
+        drawScene();
+    </script>
+</body>
+</html>
