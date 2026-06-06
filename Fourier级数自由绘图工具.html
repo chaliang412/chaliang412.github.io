@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>傅里叶级数可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #e6f7ff, #f0f8ff, #fffaf0);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .panel {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .panel h2 {
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+            color: #2c3e50;
+        }
+        
+        canvas {
+            display: block;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            margin: 0 auto;
+            cursor: crosshair;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button.clear {
+            background: #e74c3c;
+        }
+        
+        button.clear:hover {
+            background: #c0392b;
+        }
+        
+        button.fourier {
+            background: #27ae60;
+        }
+        
+        button.fourier:hover {
+            background: #219a52;
+        }
+        
+        .slider-container {
+            margin: 15px 0;
+        }
+        
+        .slider-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(52, 152, 219, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3498db;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .info-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+        
+        .info-panel h3 {
+            margin-bottom: 10px;
+            text-align: center;
+            color: #2c3e50;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+        
+        .color-box {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+        
+        .original-color {
+            background: #e74c3c;
+        }
+        
+        .fourier-color {
+            background: #3498db;
+        }
+        
+        .circles-color {
+            background: #f39c12;
+        }
+        
+        .pen-color {
+            background: #9b59b6;
+        }
+        
+        .view-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .view-btn {
+            padding: 8px 15px;
+            background: #95a5a6;
+            font-size: 0.9rem;
+        }
+        
+        .view-btn:hover {
+            background: #7f8c8d;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            color: #7f8c8d;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>傅里叶级数可视化</h1>
+            <p class="subtitle">绘制一个闭合曲线，观察傅里叶级数如何通过旋转圆叠加形成复杂曲线。</p>
+        </header>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>绘制区域</h2>
+                <canvas id="drawingCanvas" width="500" height="400"></canvas>
+                <div class="slider-container">
+                    <label for="smoothness">平滑度: <span id="smoothnessValue">3</span></label>
+                    <input type="range" id="smoothness" min="1" max="10" value="3">
+                </div>
+                <div class="controls">
+                    <button id="clearBtn" class="clear">清除画布</button>
+                    <button id="fourierBtn" class="fourier">绘制傅里叶近似曲线</button>
+                </div>
+                <div class="info-panel">
+                    <h3>使用说明</h3>
+                    <p>1. 在左侧画布上绘制一个闭合曲线</p>
+                    <p>2. 调整平滑度使曲线更光滑</p>
+                    <p>3. 点击"傅里叶变换"按钮开始动画</p>
+                    <p>4. 观察最小齿轮如何连接到画笔绘制曲线</p>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>傅里叶可视化</h2>
+                <canvas id="fourierCanvas" width="500" height="400"></canvas>
+                <div class="slider-container">
+                    <label for="circleCount">圆的数量: <span id="circleCountValue">20</span></label>
+                    <input type="range" id="circleCount" min="1" max="100" value="20">
+                </div>
+                <div class="view-controls">
+                    <button id="zoomInBtn" class="view-btn">放大</button>
+                    <button id="zoomOutBtn" class="view-btn">缩小</button>
+                    <button id="resetViewBtn" class="view-btn">重置视图</button>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="color-box original-color"></div>
+                        <span>原始曲线</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box fourier-color"></div>
+                        <span>傅里叶近似</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box circles-color"></div>
+                        <span>傅里叶圆</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box pen-color"></div>
+                        <span>画笔位置</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>傅里叶级数可视化工具 | 使用HTML5 Canvas和JavaScript实现</p>
+        </footer>
+    </div>
+
+    <script>
+        // 获取Canvas元素和上下文
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const drawingCtx = drawingCanvas.getContext('2d');
+        const fourierCanvas = document.getElementById('fourierCanvas');
+        const fourierCtx = fourierCanvas.getContext('2d');
+        
+        // 获取控制元素
+        const clearBtn = document.getElementById('clearBtn');
+        const fourierBtn = document.getElementById('fourierBtn');
+        const circleCountSlider = document.getElementById('circleCount');
+        const circleCountValue = document.getElementById('circleCountValue');
+        const smoothnessSlider = document.getElementById('smoothness');
+        const smoothnessValue = document.getElementById('smoothnessValue');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        
+        // 初始化变量
+        let isDrawing = false;
+        let points = [];
+        let smoothedPoints = [];
+        let fourier = [];
+        let time = 0;
+        let animationId = null;
+        let circleCount = 20;
+        let smoothness = 3;
+        
+        // 视图控制变量
+        let viewScale = 1.0;
+        let path = [];
+        
+        // 设置Canvas样式
+        drawingCtx.strokeStyle = '#e74c3c';
+        drawingCtx.lineWidth = 2;
+        drawingCtx.lineJoin = 'round';
+        drawingCtx.lineCap = 'round';
+        
+        fourierCtx.strokeStyle = '#3498db';
+        fourierCtx.lineWidth = 2;
+        
+        // 绘图事件监听
+        drawingCanvas.addEventListener('mousedown', startDrawing);
+        drawingCanvas.addEventListener('mousemove', draw);
+        drawingCanvas.addEventListener('mouseup', stopDrawing);
+        drawingCanvas.addEventListener('mouseout', stopDrawing);
+        
+        // 触摸事件支持
+        drawingCanvas.addEventListener('touchstart', handleTouch);
+        drawingCanvas.addEventListener('touchmove', handleTouch);
+        drawingCanvas.addEventListener('touchend', stopDrawing);
+        
+        // 控制事件监听
+        clearBtn.addEventListener('click', clearCanvas);
+        fourierBtn.addEventListener('click', startFourierTransform);
+        circleCountSlider.addEventListener('input', updateCircleCount);
+        smoothnessSlider.addEventListener('input', updateSmoothness);
+        
+        // 视图控制事件监听
+        zoomInBtn.addEventListener('click', () => adjustView('zoomIn'));
+        zoomOutBtn.addEventListener('click', () => adjustView('zoomOut'));
+        resetViewBtn.addEventListener('click', () => adjustView('reset'));
+        
+        // 开始绘图
+        function startDrawing(e) {
+            isDrawing = true;
+            points = [];
+            smoothedPoints = [];
+            draw(e);
+        }
+        
+        // 绘图过程
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            e.preventDefault();
+            
+            const rect = drawingCanvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            
+            points.push({x, y});
+            
+            // 平滑曲线
+            smoothedPoints = smoothPoints(points, smoothness);
+            
+            // 绘制平滑后的曲线
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingCtx.beginPath();
+            if (smoothedPoints.length > 1) {
+                drawingCtx.moveTo(smoothedPoints[0].x, smoothedPoints[0].y);
+                for (let i = 1; i < smoothedPoints.length; i++) {
+                    drawingCtx.lineTo(smoothedPoints[i].x, smoothedPoints[i].y);
+                }
+            }
+            drawingCtx.stroke();
+        }
+        
+        // 处理触摸事件
+        function handleTouch(e) {
+            e.preventDefault();
+            if (e.type === 'touchstart') {
+                startDrawing(e);
+            } else if (e.type === 'touchmove') {
+                draw(e);
+            }
+        }
+        
+        // 停止绘图
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // 清除画布
+        function clearCanvas() {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            fourierCtx.clearRect(0, 0, fourierCanvas.width, fourierCanvas.height);
+            points = [];
+            smoothedPoints = [];
+            fourier = [];
+            time = 0;
+            path = [];
+            resetView();
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+        
+        // 平滑点数组
+        function smoothPoints(points, smoothness) {
+            if (points.length < 3) return points;
+            
+            const smoothed = [];
+            const windowSize = Math.min(smoothness, points.length);
+            
+            for (let i = 0; i < points.length; i++) {
+                let sumX = 0;
+                let sumY = 0;
+                let count = 0;
+                
+                for (let j = -windowSize; j <= windowSize; j++) {
+                    const index = i + j;
+                    if (index >= 0 && index < points.length) {
+                        sumX += points[index].x;
+                        sumY += points[index].y;
+                        count++;
+                    }
+                }
+                
+                smoothed.push({
+                    x: sumX / count,
+                    y: sumY / count
+                });
+            }
+            
+            return smoothed;
+        }
+        
+        // 更新圆的数量
+        function updateCircleCount() {
+            circleCount = parseInt(circleCountSlider.value);
+            circleCountValue.textContent = circleCount;
+        }
+        
+        // 更新平滑度
+        function updateSmoothness() {
+            smoothness = parseInt(smoothnessSlider.value);
+            smoothnessValue.textContent = smoothness;
+            
+            if (points.length > 0) {
+                smoothedPoints = smoothPoints(points, smoothness);
+                redrawSmoothedCurve();
+            }
+        }
+        
+        // 重绘平滑曲线
+        function redrawSmoothedCurve() {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            drawingCtx.beginPath();
+            if (smoothedPoints.length > 1) {
+                drawingCtx.moveTo(smoothedPoints[0].x, smoothedPoints[0].y);
+                for (let i = 1; i < smoothedPoints.length; i++) {
+                    drawingCtx.lineTo(smoothedPoints[i].x, smoothedPoints[i].y);
+                }
+            }
+            drawingCtx.stroke();
+        }
+        
+        // 调整视图
+        function adjustView(action) {
+            switch (action) {
+                case 'zoomIn':
+                    viewScale *= 1.2;
+                    break;
+                case 'zoomOut':
+                    viewScale /= 1.2;
+                    break;
+                case 'reset':
+                    resetView();
+                    break;
+            }
+            
+            // 限制缩放范围
+            viewScale = Math.max(0.1, Math.min(5, viewScale));
+        }
+        
+        // 重置视图
+        function resetView() {
+            viewScale = 1.0;
+        }
+        
+        // 开始傅里叶变换
+        function startFourierTransform() {
+            if (smoothedPoints.length < 10) {
+                alert('请绘制更长的曲线！');
+                return;
+            }
+            
+            // 停止之前的动画
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            // 对点进行采样
+            const sampledPoints = samplePoints(smoothedPoints, 256);
+            
+            // 转换为复数形式
+            const complexPoints = sampledPoints.map(p => {
+                return {
+                    x: p.x - fourierCanvas.width / 2,
+                    y: p.y - fourierCanvas.height / 2
+                };
+            });
+            
+            // 计算傅里叶系数
+            fourier = dft(complexPoints);
+            
+            // 按振幅排序
+            fourier.sort((a, b) => b.amp - a.amp);
+            
+            // 开始动画
+            time = 0;
+            path = [];
+            resetView();
+            animate();
+        }
+        
+        // 对点进行采样
+        function samplePoints(points, numSamples) {
+            const sampled = [];
+            const totalLength = calculatePathLength(points);
+            const segmentLength = totalLength / numSamples;
+            let currentLength = 0;
+            let currentIndex = 0;
+            
+            for (let i = 0; i < numSamples; i++) {
+                const targetLength = i * segmentLength;
+                
+                while (currentIndex < points.length - 1 && 
+                       currentLength + distance(points[currentIndex], points[currentIndex + 1]) < targetLength) {
+                    currentLength += distance(points[currentIndex], points[currentIndex + 1]);
+                    currentIndex++;
+                }
+                
+                const remaining = targetLength - currentLength;
+                const segment = distance(points[currentIndex], points[currentIndex + 1]);
+                const ratio = segment > 0 ? remaining / segment : 0;
+                
+                const x = points[currentIndex].x + ratio * (points[currentIndex + 1].x - points[currentIndex].x);
+                const y = points[currentIndex].y + ratio * (points[currentIndex + 1].y - points[currentIndex].y);
+                
+                sampled.push({x, y});
+            }
+            
+            return sampled;
+        }
+        
+        // 计算路径总长度
+        function calculatePathLength(points) {
+            let length = 0;
+            for (let i = 0; i < points.length - 1; i++) {
+                length += distance(points[i], points[i + 1]);
+            }
+            return length;
+        }
+        
+        // 计算两点间距离
+        function distance(a, b) {
+            return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+        }
+        
+        // 离散傅里叶变换
+        function dft(points) {
+            const N = points.length;
+            const result = [];
+            
+            for (let k = 0; k < N; k++) {
+                let re = 0;
+                let im = 0;
+                
+                for (let n = 0; n < N; n++) {
+                    const phi = (2 * Math.PI * k * n) / N;
+                    // 复数乘法: (x + iy) * e^(-i*phi)
+                    re += points[n].x * Math.cos(phi) + points[n].y * Math.sin(phi);
+                    im += points[n].y * Math.cos(phi) - points[n].x * Math.sin(phi);
+                }
+                
+                re /= N;
+                im /= N;
+                
+                const freq = k;
+                const amp = Math.sqrt(re * re + im * im);
+                const phase = Math.atan2(im, re);
+                
+                result.push({re, im, freq, amp, phase});
+            }
+            
+            return result;
+        }
+        
+        // 动画循环
+        function animate() {
+            fourierCtx.clearRect(0, 0, fourierCanvas.width, fourierCanvas.height);
+            
+            // 应用视图变换
+            fourierCtx.save();
+            fourierCtx.translate(fourierCanvas.width / 2, fourierCanvas.height / 2);
+            fourierCtx.scale(viewScale, viewScale);
+            
+            // 绘制傅里叶圆并获取画笔位置
+            const penPosition = drawEpicycles(fourierCtx, 0, 0, time, circleCount);
+            
+            // 添加到路径
+            path.unshift({x: penPosition.x, y: penPosition.y});
+            
+            // 绘制傅里叶近似路径
+            fourierCtx.strokeStyle = '#3498db';
+            fourierCtx.lineWidth = 2;
+            fourierCtx.beginPath();
+            fourierCtx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                fourierCtx.lineTo(path[i].x, path[i].y);
+            }
+            fourierCtx.stroke();
+            
+            // 限制路径长度
+            if (path.length > 500) {
+                path.pop();
+            }
+            
+            // 恢复变换
+            fourierCtx.restore();
+            
+            // 更新时间（固定速度1）
+            time += (2 * Math.PI) / fourier.length;
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 绘制傅里叶圆并返回画笔位置
+        function drawEpicycles(ctx, x, y, time, nCircles) {
+            let currentX = x;
+            let currentY = y;
+            
+            // 绘制所有傅里叶圆
+            for (let i = 0; i < Math.min(nCircles, fourier.length); i++) {
+                const prevX = currentX;
+                const prevY = currentY;
+                
+                const freq = fourier[i].freq;
+                const radius = fourier[i].amp;
+                const phase = fourier[i].phase;
+                
+                // 计算当前圆边缘上的点
+                currentX += radius * Math.cos(freq * time + phase);
+                currentY += radius * Math.sin(freq * time + phase);
+                
+                // 绘制圆
+                ctx.strokeStyle = '#f39c12';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(prevX, prevY, radius, 0, 2 * Math.PI);
+                ctx.stroke();
+                
+                // 绘制半径线（连接到下一个圆的中心）
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+                
+                // 如果是最后一个圆，绘制画笔
+                if (i === Math.min(nCircles, fourier.length) - 1) {
+                    // 绘制画笔位置（最小的齿轮连接的点）
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.beginPath();
+                    ctx.arc(currentX, currentY, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // 在画笔位置添加一个小十字标记
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(currentX - 8, currentY);
+                    ctx.lineTo(currentX + 8, currentY);
+                    ctx.moveTo(currentX, currentY - 8);
+                    ctx.lineTo(currentX, currentY + 8);
+                    ctx.stroke();
+                }
+            }
+            
+            return {x: currentX, y: currentY};
+        }
+    </script>
+</body>
+</html>
