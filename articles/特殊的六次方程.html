@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特殊的六次方程</title>
+
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                tags: 'ams'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --content-bg: #ffffff;
+            --text-color: #1a202c;
+            --border-color: #e2e8f0;
+            --accent-color: #2b6cb0;
+            --theorem-bg: #f7fafc;
+            --proof-border: #c05621;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --inline-code-bg: #edf2f7;
+            --inline-code-color: #c53030;
+            --question-bg: #fff5f5;
+            --question-border: #fc8181;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.8;
+            padding: 1rem;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 2.5rem 3rem;
+            background-color: var(--content-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            color: #1a202c;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .math-block {
+            overflow-x: auto;
+            margin: 1rem 0;
+            padding: 0.5rem 0;
+        }
+
+        /* Custom Blocks */
+        .env-block {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+
+        .env-block .env-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .env-question {
+            background-color: var(--question-bg);
+            border-left-color: var(--question-border);
+        }
+
+        .env-question .env-title {
+            color: #c53030;
+        }
+
+        .env-proof {
+            background-color: var(--theorem-bg);
+            border-left-color: var(--proof-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .env-proof .env-title {
+            color: var(--proof-border);
+        }
+
+        .proof-end {
+            text-align: right;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Footnote */
+        .footnote-block {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: -0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem;
+            background-color: #f7fafc;
+            border-radius: 4px;
+        }
+
+        .footnote-block a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .footnote-block a:hover {
+            text-decoration: underline;
+        }
+
+        /* Code */
+        code {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            background-color: var(--inline-code-bg);
+            color: var(--inline-code-color);
+            padding: 0.15em 0.35em;
+            border-radius: 3px;
+            font-size: 0.88em;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        pre code {
+            background-color: transparent;
+            color: inherit;
+            padding: 0;
+            font-size: 0.88em;
+            line-height: 1.6;
+        }
+
+        /* Separator */
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
+            margin: 3rem 0;
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            color: #2d3748;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                padding: 1.5rem 1rem;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>特殊的六次方程</h1>
+
+        <div class="env-block env-question">
+            <div class="env-title">Question</div>
+            <p>试证明 $x=\wp \left( \frac{w}{5} \right) +\wp \left( \frac{2w}{5} \right)$，其中 $w=2m\omega +2m^\prime \omega^\prime$，是六次方程</p>
+            <div class="math-block">$$ x^6-5g_2x^4-40g_3x^3-5{g_2}^2x^2-8g_2g_3x-5{g_3}^2=0 $$</div>
+            <p>的根，并把六个根都表示出来。<sup>[1]</sup></p>
+        </div>
+
+        <div class="footnote-block">
+            [1] 该问题出自王竹溪《特殊函数概论》第八章外氏椭圆函数。更多讨论请看：<a href="https://chaoli.club/index.php/11858/0/" target="_blank" rel="noopener noreferrer">https://chaoli.club/index.php/11858/0/</a>
+        </div>
+
+        <div class="env-block env-proof">
+            <div class="env-title">证明</div>
+            <p>设 $\Lambda = \{2m\omega + 2m'\omega' \mid m,m'\in\mathbb{Z}\}$ 为周期格。</p>
+            <p>考虑 $z = \dfrac{w}{5}$，其中 $w \in \Lambda$，即 $5z \in \Lambda$。令 $p = \wp(z)$，$q = \wp(2z)$，则 $x = p + q$。</p>
+            <p>由倍角公式：</p>
+            <div class="math-block">$$ q = \frac{p^4 + \frac{g_2}{2} p^2 + 2g_3 p + \frac{g_2^2}{16}}{4p^3 - g_2 p - g_3} $$</div>
+            <p>去分母整理得</p>
+            <div class="math-block">$$ p^4 - 4p^3 q + \frac{g_2}{2} p^2 + g_2 p q + 2g_3 p + g_3 q + \frac{g_2^2}{16} = 0 \tag{1} $$</div>
+            
+            <p>由 $5z \in \Lambda$ 得 $4z \equiv -z \pmod{\Lambda}$，故 $\wp(4z) = \wp(-z) = \wp(z) = p$。</p>
+            <p>又由倍角公式，$\wp(4z) = \wp(2 \cdot 2z) = \dfrac{q^4 + \frac{g_2}{2}q^2 + 2g_3 q + \frac{g_2^2}{16}}{4q^3 - g_2 q - g_3}$，因此有</p>
+            <div class="math-block">$$ q^4 - 4q^3 p + \frac{g_2}{2} q^2 + g_2 p q + 2g_3 q + g_3 p + \frac{g_2^2}{16} = 0 \tag{2} $$</div>
+
+            <p>将 (1) 与 (2) 相加，得</p>
+            <div class="math-block">$$ p^4 + q^4 - 4pq(p^2 + q^2) + \frac{g_2}{2}(p^2 + q^2) + 2g_2 pq + 3g_3 (p + q) + \frac{g_2^2}{8} = 0 $$</div>
+
+            <p>因 $x = p + q$，设 $y = pq$，则 $p^2 + q^2 = x^2 - 2y$，$p^4 + q^4 = x^4 - 4x^2 y + 2y^2$，代入得</p>
+            <div class="math-block">$$ x^4 - 4x^2 y + 2y^2 - 4y(x^2 - 2y) + \frac{g_2}{2}(x^2 - 2y) + 2g_2 y + 3g_3 x + \frac{g_2^2}{8} = 0 $$</div>
+            <p>化简为</p>
+            <div class="math-block">$$ x^4 - 8x^2 y + 10y^2 + \frac{g_2}{2} x^2 + g_2 y + 3g_3 x + \frac{g_2^2}{8} = 0 \tag{A} $$</div>
+
+            <p>将 (1) 与 (2) 相减，得</p>
+            <div class="math-block">$$ (p^4 - q^4) - 4pq(p^2 - q^2) + \frac{g_2}{2}(p^2 - q^2) + g_3(p - q) = 0 $$</div>
+            <p>即</p>
+            <div class="math-block">$$ (p-q)\left(p^3+q^3-3pq(p+q)+\frac{g_2}{2}(p+q)+g_3\right)=0 $$</div>
+            <p>一般 $p \neq q$，故约去 $p-q$ 得：</p>
+            <div class="math-block">$$ (p^3 + q^3) - 3pq(p + q) + \frac{g_2}{2} x + g_3 = 0 $$</div>
+            <p>代入 $p^3 + q^3 = x^3 - 3xy$，</p>
+            <div class="math-block">$$ x^3 - 6xy + \frac{g_2}{2} x + g_3 = 0 \tag{B} $$</div>
+
+            <p>由 (B) 解得</p>
+            <div class="math-block">$$ y = \frac{g_2 x + 2g_3 + 2x^3}{12x} $$</div>
+            <p>代入 (A) 即得</p>
+            <div class="math-block">$$ x^6 - 5g_2 x^4 - 40g_3 x^3 - 5g_2^2 x^2 - 8g_2 g_3 x - 5g_3^2 = 0 $$</div>
+
+            <p>因此，$x = \wp(z) + \wp(2z)$ 满足该六次方程。</p>
+            <p>由对称性，只需取 $(m,m')$ 模 $5$ 下非零且互不等价的六个代表元。例如：</p>
+            <div class="math-block">$$ \begin{aligned} x_{(1,0)} &= \wp\left(\frac{2\omega}{5}\right) + \wp\left(\frac{4\omega}{5}\right),\\[4pt] x_{(0,1)} &= \wp\left(\frac{2\omega'}{5}\right) + \wp\left(\frac{4\omega'}{5}\right),\\[4pt] x_{(1,1)} &= \wp\left(\frac{2\omega + 2\omega'}{5}\right) + \wp\left(\frac{4\omega + 4\omega'}{5}\right),\\[4pt] x_{(1,2)} &= \wp\left(\frac{2\omega + 4\omega'}{5}\right) + \wp\left(\frac{4\omega + 8\omega'}{5}\right),\\[4pt] x_{(1,3)} &= \wp\left(\frac{2\omega + 6\omega'}{5}\right) + \wp\left(\frac{4\omega + 12\omega'}{5}\right),\\[4pt] x_{(1,4)} &= \wp\left(\frac{2\omega + 8\omega'}{5}\right) + \wp\left(\frac{4\omega + 16\omega'}{5}\right), \end{aligned} $$</div>
+            <p>其中 $(m,m')$ 对应 $w = 2m\omega + 2m'\omega'$。这六个数即为六次方程的全部根。</p>
+            <p class="proof-end">∎</p>
+        </div>
+
+        <hr>
+
+        <h3>Mathematica 数值验证</h3>
+        <pre><code>ClearAll["Global`*"]
+g2 = 2.; g3 = 3.; (* 不加小数点，会报错 *)
+NSolve[x^6 - 5*g2*x^4 - 40*g3*x^3 - 5*g2^2*x^2 - 8*g2*g3*x - 5*g3^2 == 0, x]
+
+{\[Omega], \[Omega]p} = WeierstrassHalfPeriods[{g2, g3}];
+wp[z_] := WeierstrassP[z, {g2, g3}];
+
+wp[2*\[Omega]/5] + wp[4*\[Omega]/5] // N   (* x1 *)
+wp[2*\[Omega]p/5] + wp[4*\[Omega]p/5] // N  (* x2 *)
+wp[2 (\[Omega] + \[Omega]p)/5] + wp[4 (\[Omega] + \[Omega]p)/5] // N  (* x3 *)
+wp[(2*\[Omega] + 4*\[Omega]p)/5] + wp[(4*\[Omega] + 8*\[Omega]p)/5] // N  (* x4 *)
+wp[(2*\[Omega] + 6*\[Omega]p)/5] + wp[(4*\[Omega] + 12*\[Omega]p)/5] // N  (* x5 *)
+wp[(2*\[Omega] + 8*\[Omega]p)/5] + wp[(4*\[Omega] + 16*\[Omega]p)/5] // N  (* x6 *)</code></pre>
+
+        <p>输出：</p>
+        <pre><code>{{x -> -2.76545 - 3.65242 I}, {x -> -2.76545 + 3.65242 I}, {x -> -0.591168}, 
+ {x -> 0.227847 - 0.766911 I}, {x -> 0.227847 + 0.766911 I}, {x -> 5.66638}}
+
+5.66638 + 0. I
+-2.76545 - 3.65242 I
+0.227847 - 0.766911 I
+0.227847 + 0.766911 I
+-0.591168 + 2.2849*10^-16 I
+-2.76545 + 3.65242 I</code></pre>
+
+    </main>
+</body>
+</html>
