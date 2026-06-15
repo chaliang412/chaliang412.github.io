@@ -1,0 +1,2462 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>贝塞尔曲线绘制工具</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+SC:wght@300;400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      /* ========== 暗色主题（默认） ========== */
+      :root {
+        --bg: #0c0e14;
+        --bg-panel: #13151e;
+        --bg-card: #1a1d2a;
+        --bg-input: #22263a;
+        --fg: #e8eaf0;
+        --fg-muted: #7a7f99;
+        --accent: #00e5a0;
+        --accent-dim: rgba(0, 229, 160, 0.12);
+        --accent-glow: rgba(0, 229, 160, 0.35);
+        --danger: #ff6b6b;
+        --danger-dim: rgba(255, 107, 107, 0.15);
+        --border: #2a2e42;
+        --radius: 10px;
+        --radius-sm: 6px;
+        --shadow-panel: 4px 0 32px rgba(0, 0, 0, 0.4);
+        --scrollbar-thumb: #2a2e42;
+      }
+
+      /* ========== 亮色主题 ========== */
+      :root.light {
+        --bg: #f0f2f8;
+        --bg-panel: #ffffff;
+        --bg-card: #f5f6fa;
+        --bg-input: #eceef4;
+        --fg: #1a1d2e;
+        --fg-muted: #6b7094;
+        --accent: #00a876;
+        --accent-dim: rgba(0, 168, 118, 0.1);
+        --accent-glow: rgba(0, 168, 118, 0.3);
+        --danger: #e53935;
+        --danger-dim: rgba(229, 57, 53, 0.1);
+        --border: #dfe1ea;
+        --shadow-panel: 4px 0 24px rgba(0, 0, 0, 0.08);
+        --scrollbar-thumb: #c8cad4;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background: var(--bg);
+        color: var(--fg);
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        transition:
+          background 0.4s,
+          color 0.4s;
+      }
+
+      /* ========== 左侧面板 ========== */
+      .panel {
+        width: 310px;
+        min-width: 310px;
+        background: var(--bg-panel);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        z-index: 10;
+        position: relative;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) transparent;
+        box-shadow: var(--shadow-panel);
+        transition:
+          background 0.4s,
+          border-color 0.4s,
+          box-shadow 0.4s;
+      }
+      .panel::-webkit-scrollbar {
+        width: 4px;
+      }
+      .panel::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .panel::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 4px;
+      }
+
+      .panel-header {
+        padding: 20px 20px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: border-color 0.4s;
+      }
+      .panel-header-left h1 {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+        background: linear-gradient(135deg, var(--accent), #66ffcc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .panel-header-left p {
+        font-size: 11px;
+        color: var(--fg-muted);
+        margin-top: 2px;
+      }
+
+      /* 主题切换按钮 */
+      .theme-toggle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--fg-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.3s;
+        flex-shrink: 0;
+      }
+      .theme-toggle:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        box-shadow: 0 0 12px var(--accent-dim);
+      }
+
+      .panel-section {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        transition: border-color 0.4s;
+      }
+      .panel-section:last-child {
+        border-bottom: none;
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--fg-muted);
+        margin-bottom: 10px;
+      }
+
+      /* 输入 */
+      .input-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .coord-input {
+        flex: 1;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 9px 12px;
+        color: var(--fg);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s,
+          background 0.4s;
+      }
+      .coord-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+      }
+      .coord-input::placeholder {
+        color: var(--fg-muted);
+        opacity: 0.5;
+      }
+
+      /* 按钮 */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg-card);
+        color: var(--fg);
+        font-family: "Noto Sans SC", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        user-select: none;
+      }
+      .btn:hover {
+        background: var(--bg-input);
+        border-color: var(--fg-muted);
+      }
+      .btn:active {
+        transform: scale(0.97);
+      }
+
+      .btn-accent {
+        background: var(--accent);
+        color: #0c0e14;
+        border-color: var(--accent);
+      }
+      .btn-accent:hover {
+        background: #33edb5;
+        border-color: #33edb5;
+        box-shadow: 0 0 16px var(--accent-glow);
+      }
+      :root.light .btn-accent {
+        color: #ffffff;
+      }
+
+      .btn-danger {
+        color: var(--danger);
+        border-color: var(--danger-dim);
+      }
+      .btn-danger:hover {
+        background: var(--danger-dim);
+        border-color: var(--danger);
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .btn-group .btn {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* 控制点列表 */
+      .points-list {
+        max-height: 200px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) transparent;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg-card);
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      .points-list::-webkit-scrollbar {
+        width: 3px;
+      }
+      .points-list::-webkit-scrollbar-thumb {
+        background: var(--scrollbar-thumb);
+        border-radius: 3px;
+      }
+
+      .point-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .point-item:last-child {
+        border-bottom: none;
+      }
+      .point-item:hover {
+        background: var(--bg-input);
+      }
+
+      .point-badge {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--danger);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        flex-shrink: 0;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .point-coords {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        color: var(--fg);
+        flex: 1;
+        transition: color 0.4s;
+      }
+      .point-actions {
+        display: flex;
+        gap: 4px;
+        opacity: 0;
+        transition: opacity 0.15s;
+      }
+      .point-item:hover .point-actions {
+        opacity: 1;
+      }
+
+      .point-action-btn {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        border: none;
+        background: transparent;
+        color: var(--fg-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        transition: all 0.15s;
+      }
+      .point-action-btn:hover {
+        background: var(--danger-dim);
+        color: var(--danger);
+      }
+      .point-action-btn.edit-btn:hover {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+
+      .empty-list {
+        padding: 24px;
+        text-align: center;
+        color: var(--fg-muted);
+        font-size: 12px;
+      }
+
+      /* 开关 */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+      }
+      .toggle-label {
+        font-size: 13px;
+        color: var(--fg);
+        transition: color 0.4s;
+      }
+      .toggle {
+        width: 38px;
+        height: 20px;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.25s;
+        flex-shrink: 0;
+      }
+      .toggle::after {
+        content: "";
+        width: 14px;
+        height: 14px;
+        background: var(--fg-muted);
+        border-radius: 50%;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        transition: all 0.25s;
+      }
+      .toggle.active {
+        background: var(--accent-dim);
+        border-color: var(--accent);
+      }
+      .toggle.active::after {
+        left: 20px;
+        background: var(--accent);
+      }
+
+      /* 使用说明 */
+      .help-text {
+        font-size: 11px;
+        color: var(--fg-muted);
+        line-height: 1.7;
+        background: var(--bg-card);
+        border-radius: var(--radius-sm);
+        padding: 12px;
+        border: 1px solid var(--border);
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      .help-text span {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* ========== 画布区域 ========== */
+      .canvas-area {
+        flex: 1;
+        position: relative;
+        z-index: 5;
+        overflow: hidden;
+      }
+
+      canvas#mainCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        cursor: crosshair;
+      }
+
+      .canvas-info {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(19, 21, 30, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        color: var(--fg-muted);
+        pointer-events: none;
+        z-index: 20;
+        transition: border-color 0.4s;
+      }
+      :root.light .canvas-info {
+        background: rgba(255, 255, 255, 0.9);
+        color: #6b7094;
+      }
+      .canvas-info .val {
+        color: var(--accent);
+      }
+
+      /* ========== 右键菜单 ========== */
+      .context-menu {
+        position: fixed;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px;
+        min-width: 160px;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: menuIn 0.15s ease-out;
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      @keyframes menuIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95) translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .context-menu-item {
+        padding: 8px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.12s;
+        color: var(--fg);
+      }
+      .context-menu-item:hover {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .context-menu-item.danger:hover {
+        background: var(--danger-dim);
+        color: var(--danger);
+      }
+      .context-menu-item i {
+        width: 16px;
+        text-align: center;
+        font-size: 12px;
+      }
+
+      /* ========== 编辑对话框 ========== */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.15s ease-out;
+      }
+      .modal-overlay.show {
+        display: flex;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        min-width: 320px;
+        box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+        animation: modalIn 0.2s ease-out;
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      @keyframes modalIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9) translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+      .modal h3 {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      .modal-field {
+        margin-bottom: 12px;
+      }
+      .modal-field label {
+        display: block;
+        font-size: 12px;
+        color: var(--fg-muted);
+        margin-bottom: 4px;
+      }
+      .modal-field input {
+        width: 100%;
+        background: var(--bg-input);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 9px 12px;
+        color: var(--fg);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          background 0.4s;
+      }
+      .modal-field input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-dim);
+      }
+      .modal-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+
+      /* ========== Toast ========== */
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+      }
+      .toast {
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 20px;
+        font-size: 13px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        animation: toastIn 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      .toast.success {
+        border-color: var(--accent);
+      }
+      .toast.success i {
+        color: var(--accent);
+      }
+      .toast.error {
+        border-color: var(--danger);
+      }
+      .toast.error i {
+        color: var(--danger);
+      }
+      @keyframes toastIn {
+        from {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes toastOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+      }
+
+      /* ========== 导出下拉 ========== */
+      .export-dropdown {
+        position: absolute;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 6px;
+        min-width: 200px;
+        z-index: 100;
+        display: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        animation: menuIn 0.15s ease-out;
+        transition:
+          background 0.4s,
+          border-color 0.4s;
+      }
+      .export-dropdown.show {
+        display: block;
+      }
+      .export-dropdown .context-menu-item {
+        font-size: 12px;
+        padding: 7px 12px;
+      }
+
+      /* ========== 鼠标坐标 ========== */
+      .cursor-tooltip {
+        position: fixed;
+        background: rgba(19, 21, 30, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: var(--fg-muted);
+        pointer-events: none;
+        z-index: 50;
+        display: none;
+      }
+      :root.light .cursor-tooltip {
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      /* ========== 空格键平移提示 ========== */
+      .pan-hint {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(19, 21, 30, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--accent);
+        border-radius: var(--radius);
+        padding: 8px 16px;
+        font-size: 12px;
+        color: var(--accent);
+        pointer-events: none;
+        z-index: 20;
+        display: none;
+        animation: fadeIn 0.15s;
+      }
+      :root.light .pan-hint {
+        background: rgba(255, 255, 255, 0.9);
+      }
+      .pan-hint.show {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          flex-direction: column;
+        }
+        .panel {
+          width: 100%;
+          min-width: 100%;
+          max-height: 45vh;
+          border-right: none;
+          border-bottom: 1px solid var(--border);
+        }
+        .canvas-area {
+          min-height: 55vh;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="panel" role="complementary" aria-label="控制面板">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <h1>Bezier Curve</h1>
+          <p>贝塞尔曲线绘制工具</p>
+        </div>
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          title="切换白天/夜间模式"
+          aria-label="切换主题"
+        >
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">添加控制点</div>
+        <div class="input-group">
+          <input
+            type="text"
+            class="coord-input"
+            id="coordInput"
+            placeholder="x, y  例如: 100,200"
+            aria-label="坐标输入"
+          />
+          <button class="btn btn-accent" id="addBtn" title="添加点">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <div class="btn-group">
+          <button class="btn" id="autoAdjustBtn">
+            <i class="fas fa-expand"></i> 自动调整
+          </button>
+          <button class="btn" id="exportBtn" style="position: relative">
+            <i class="fas fa-download"></i> 导出
+          </button>
+        </div>
+        <div style="margin-top: 8px">
+          <button class="btn btn-danger" id="clearBtn" style="width: 100%">
+            <i class="fas fa-trash-alt"></i> 清除所有点
+          </button>
+        </div>
+        <div class="export-dropdown" id="exportDropdown">
+          <div class="context-menu-item" id="expSVG">
+            <i class="fas fa-vector-square"></i> 导出 SVG
+          </div>
+          <div class="context-menu-item" id="expEPS">
+            <i class="fas fa-file-code"></i> 导出 EPS (LaTeX)
+          </div>
+          <div class="context-menu-item" id="expPNG">
+            <i class="fas fa-image"></i> 导出 PNG
+          </div>
+          <div class="context-menu-item" id="expJPG">
+            <i class="fas fa-file-image"></i> 导出 JPG
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">控制点列表</div>
+        <div
+          class="points-list"
+          id="pointsList"
+          role="list"
+          aria-label="控制点列表"
+        >
+          <div class="empty-list">暂无控制点，请添加</div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">显示选项</div>
+        <div class="toggle-row">
+          <span class="toggle-label">控制点</span>
+          <div
+            class="toggle active"
+            id="togglePoints"
+            role="switch"
+            aria-checked="true"
+            tabindex="0"
+          ></div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">控制点连线</span>
+          <div
+            class="toggle active"
+            id="toggleLines"
+            role="switch"
+            aria-checked="true"
+            tabindex="0"
+          ></div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">坐标网格</span>
+          <div
+            class="toggle active"
+            id="toggleGrid"
+            role="switch"
+            aria-checked="true"
+            tabindex="0"
+          ></div>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">坐标轴</span>
+          <div
+            class="toggle active"
+            id="toggleAxes"
+            role="switch"
+            aria-checked="true"
+            tabindex="0"
+          ></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="section-label">使用说明</div>
+        <div class="help-text">
+          <span
+            ><svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="39.857ex"
+              height="6.258ex"
+              viewBox="0 -1562.5 17616.8 2766"
+              xmlns:xlink="http://www.w3.org/1999/xlink"
+              style=""
+            >
+              <defs>
+                <path
+                  id="MJX-1-NCM-I-1D435"
+                  d="M756 543C756 634 666 683 568 683L236 683C213 683 203 682 203 659C203 643 223 644 235 644C265 643 283 641 288 640C293 639 295 636 295 631C295 629 294 623 291 613L159 82C154 60 144 47 129 42C122 40 104 39 73 39C52 39 42 31 42 15C42 5 52 0 73 0L426 0C491 0 551 20 608 59C671 102 703 155 703 217C703 296 638 344 567 358C655 379 756 446 756 543M554 644C623 644 658 612 658 547C658 496 638 454 596 420C554 386 507 370 456 370L317 370L377 610C385 644 385 644 427 644M582 299C596 276 603 253 603 228C603 176 583 131 542 94C501 57 455 39 402 39L267 39C257 39 250 39 246 40C240 40 237 42 237 45C237 46 237 49 238 53C269 180 293 276 309 340L493 340C536 340 565 326 582 299Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-28"
+                  d="M318-248C327-248 332-243 332-234C332-231 330-227 327-223C275-183 233-117 202-26C175 53 161 131 161 208L161 292C161 369 175 447 202 526C233 617 275 683 327 723C330 726 332 730 332 734C332 743 327 748 318 748C317 748 314 747 311 745C251 699 201 631 160 540C121 453 101 371 101 292L101 208C101 129 121 47 160-40C201-131 251-199 311-245C314-247 317-248 318-248Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-I-1D461"
+                  d="M330 419C330 428 320 433 299 433L218 433C244 537 257 591 257 595C257 616 246 626 225 626C202 626 188 613 182 587L145 433L56 433C34 433 23 432 23 411C23 400 33 395 54 395L135 395C86 200 62 97 62 84C62 28 100-11 156-11C194-11 227 6 256 41C280 70 297 98 308 125C312 136 314 142 314 145C314 154 309 159 299 159C291 159 285 154 281 143C247 60 206 19 157 19C140 19 131 33 131 60C131 75 133 91 137 107L208 395L297 395C323 395 330 397 330 419Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-29"
+                  d="M78-245C138-199 188-131 229-40C268 47 288 129 288 208L288 292C288 371 268 453 229 540C188 631 138 699 78 745C75 747 72 748 71 748C62 748 57 743 57 734C57 730 59 726 62 723C114 683 156 617 187 526C214 447 228 369 228 292L228 208C228 131 214 53 187-26C156-117 114-183 62-223C59-227 57-231 57-234C57-243 62-248 71-248C72-248 75-247 78-245Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-3D"
+                  d="M698 367L80 367C64 367 56 359 56 344C56 329 64 321 80 321L698 321C714 321 722 329 722 344C722 356 711 367 698 367M698 179L80 179C64 179 56 171 56 156C56 141 64 133 80 133L698 133C714 133 722 141 722 156C722 169 711 179 698 179Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-LO-2211"
+                  d="M1265-450L1389-124L1355-124C1336-174 1304-216 1258-250C1145-334 1000-356 791-356L200-356L700 232C707 239 710 246 710 251L244 894L781 894C970 894 1127 870 1230 804C1290 766 1332 719 1356 663L1389 663L1265 950L88 950C70 950 60 947 57 941C56 938 56 926 56 905L581 187L68-415C61-423 57-430 57-435C57-445 67-450 88-450Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-I-1D456"
+                  d="M284 621C284 648 271 661 244 661C216 661 188 633 188 605C188 578 202 565 229 565C257 565 284 593 284 621M259 138C237 59 205 19 164 19C151 19 144 28 144 47C144 64 173 150 232 306C240 329 244 347 244 360C244 409 210 445 161 445C118 445 84 420 59 369C39 328 29 301 29 288C29 279 34 275 45 275C58 275 60 281 64 295C87 375 118 415 158 415C171 415 178 406 178 387C178 373 175 357 168 338C145 275 121 208 101 155C86 115 78 88 78 74C78 25 114-11 162-11C205-11 239 14 264 64C283 103 293 130 293 145C293 154 288 159 277 159C274 159 259 150 259 138Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-30"
+                  d="M249-22C390-22 460 92 460 320C460 473 428 575 365 625C330 652 291 666 250 666C109 666 39 551 39 320C39 136 88-22 249-22M361 524C368 489 371 425 371 332C371 240 367 172 360 128C347 48 310 8 249 8C226 8 203 17 182 34C155 57 139 104 132 176C129 201 128 253 128 332C128 419 131 480 136 513C145 568 163 603 191 618C213 630 232 636 249 636C314 636 350 583 361 524Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-I-1D45B"
+                  d="M537 137C514 58 481 18 440 18C427 18 420 28 420 47C420 61 426 84 438 115C478 224 498 296 498 333C498 403 451 442 381 442C322 442 271 416 230 363C222 407 187 442 136 442C80 442 58 390 44 345C34 313 29 294 29 287C29 278 34 273 45 273C50 273 53 274 56 276C61 285 64 292 65 299C83 375 106 413 133 413C151 413 160 399 160 371C160 358 155 331 144 290L87 63C84 50 78 24 78 19C78-1 89-11 111-11C130-11 144-1 151 19C153 24 159 49 170 92L191 181L221 295C232 318 249 341 270 365C299 397 335 413 378 413C411 413 427 391 427 348C427 310 406 234 363 120C356 102 353 87 353 74C353 25 390-11 438-11C482-11 517 14 542 64C561 104 571 131 571 144C571 153 566 158 555 158C552 158 537 149 537 137Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-S5-28"
+                  d="M588-796C601-796 608-789 608-776C608-770 606-765 601-760C500-684 420-552 361-365C310-206 285-51 285 101L285 399C285 551 310 706 361 865C420 1052 500 1184 601 1260C606 1265 608 1270 608 1276C608 1289 601 1296 588 1296C583 1296 579 1295 576 1292C464 1207 372 1071 300 886C234 717 201 554 201 399L201 101C201-54 234-217 300-386C372-571 464-707 576-792C579-795 583-796 588-796Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-S5-29"
+                  d="M86-792C198-707 290-571 363-386C429-217 462-54 462 101L462 399C462 554 429 717 363 886C290 1071 198 1207 86 1292C83 1295 80 1296 75 1296C62 1296 55 1289 55 1276C55 1269 57 1264 62 1260C163 1183 243 1052 302 865C353 707 378 552 378 399L378 101C378-51 353-206 302-365C243-552 163-684 62-760C57-764 55-769 55-776C55-789 62-796 75-796C80-796 83-795 86-792Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-31"
+                  d="M269 666C228 624 168 603 89 603L89 564C141 564 184 572 217 588L217 82C217 64 213 52 204 47C195 42 170 39 130 39L95 39L95 0C120 2 174 3 257 3C340 3 394 2 419 0L419 39L384 39C343 39 318 42 310 47C302 52 297 64 297 82L297 636C297 660 295 666 269 666Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-2212"
+                  d="M698 270L80 270C64 270 56 263 56 250C56 237 64 230 80 230L698 230C714 230 722 237 722 250C722 262 710 270 698 270Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-I-1D443"
+                  d="M555 683L235 683C212 683 201 682 201 660C201 649 212 644 234 644C254 644 294 647 294 631C294 629 293 623 290 613L158 82C152 60 142 47 128 42C121 40 103 39 72 39C50 39 40 37 40 16C40 5 46 0 59 0L184 3L248 2C259 2 299 0 312 0C328 0 336 8 336 24C336 34 325 39 304 39C264 39 244 43 244 52C244 52 245 55 247 68L307 312L472 312C537 312 599 332 657 371C722 414 754 467 754 530C754 629 660 683 555 683M524 644C611 644 654 614 654 554C654 498 626 423 597 397C559 363 509 346 447 346L313 346L379 610C387 644 387 644 429 644Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-2C"
+                  d="M139 106C107 106 86 82 86 50C86 20 109-5 139-5C153-5 165-1 174 8L175 0C175-63 154-117 112-160C105-168 101-174 101-178C101-188 105-193 114-193C123-193 135-181 152-158C186-110 203-57 203 0C203 53 185 106 139 106Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-2208"
+                  d="M563 4L373 4C310 4 254 25 208 68C162 111 136 163 130 226L563 226C579 226 587 234 587 250C587 266 579 274 563 274L130 274C136 337 162 389 208 432C254 475 310 496 373 496L563 496C579 496 587 504 587 519C587 535 579 543 563 543L373 543C292 543 223 515 166 458C109 401 81 332 81 250C81 168 109 99 166 42C223-15 292-43 373-43L563-43C579-43 587-35 587-19C587-7 576 4 563 4Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-5B"
+                  d="M233-202L159-202L159 702L233 702C248 702 256 710 256 726C256 742 248 750 233 750L114 750L114-250L233-250C248-250 256-242 256-226C256-214 245-202 233-202Z"
+                ></path>
+                <path
+                  id="MJX-1-NCM-N-5D"
+                  d="M45-250L164-250L164 750L45 750C30 750 22 742 22 726C22 710 30 702 45 702L119 702L119-202L45-202C30-202 22-210 22-226C22-242 30-250 45-250Z"
+                ></path>
+              </defs>
+              <g
+                stroke="currentColor"
+                fill="currentColor"
+                stroke-width="0"
+                transform="scale(1,-1)"
+                data-darkreader-inline-stroke=""
+                style="--darkreader-inline-stroke: currentColor"
+              >
+                <g
+                  data-mml-node="math"
+                  data-latex="B(t) = \sum_{i=0}^{n} \binom{n}{i} (1-t)^{n-i} t^i P_i, \quad t \in [0, 1]
+"
+                >
+                  <g data-mml-node="mi" data-latex="B">
+                    <use data-c="1D435" xlink:href="#MJX-1-NCM-I-1D435"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="("
+                    transform="translate(759,0)"
+                  >
+                    <use data-c="28" xlink:href="#MJX-1-NCM-N-28"></use>
+                  </g>
+                  <g
+                    data-mml-node="mi"
+                    data-latex="t"
+                    transform="translate(1148,0)"
+                  >
+                    <use data-c="1D461" xlink:href="#MJX-1-NCM-I-1D461"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex=")"
+                    transform="translate(1509,0)"
+                  >
+                    <use data-c="29" xlink:href="#MJX-1-NCM-N-29"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="="
+                    transform="translate(2175.8,0)"
+                  >
+                    <use data-c="3D" xlink:href="#MJX-1-NCM-N-3D"></use>
+                  </g>
+                  <g
+                    data-mml-node="munderover"
+                    data-latex="\sum_{i=0}^{n}"
+                    transform="translate(3231.6,0)"
+                  >
+                    <g data-mml-node="mo" data-latex="\sum">
+                      <use data-c="2211" xlink:href="#MJX-1-NCM-LO-2211"></use>
+                    </g>
+                    <g
+                      data-mml-node="TeXAtom"
+                      transform="translate(148.2,-1087.9) scale(0.707)"
+                      data-latex="{i=0}"
+                      data-mjx-texclass="ORD"
+                    >
+                      <g data-mml-node="mi" data-latex="i">
+                        <use
+                          data-c="1D456"
+                          xlink:href="#MJX-1-NCM-I-1D456"
+                        ></use>
+                      </g>
+                      <g
+                        data-mml-node="mo"
+                        data-latex="="
+                        transform="translate(345,0)"
+                      >
+                        <use data-c="3D" xlink:href="#MJX-1-NCM-N-3D"></use>
+                      </g>
+                      <g
+                        data-mml-node="mn"
+                        data-latex="0"
+                        transform="translate(1123,0)"
+                      >
+                        <use data-c="30" xlink:href="#MJX-1-NCM-N-30"></use>
+                      </g>
+                    </g>
+                    <g
+                      data-mml-node="TeXAtom"
+                      transform="translate(509.9,1150) scale(0.707)"
+                      data-latex="{n}"
+                      data-mjx-texclass="ORD"
+                    >
+                      <g data-mml-node="mi" data-latex="n">
+                        <use
+                          data-c="1D45B"
+                          xlink:href="#MJX-1-NCM-I-1D45B"
+                        ></use>
+                      </g>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="mrow"
+                    data-latex="\binom{n}{i}"
+                    transform="translate(4842.2,0)"
+                  >
+                    <g
+                      data-mml-node="TeXAtom"
+                      data-latex="\biggl ("
+                      data-mjx-texclass="OPEN"
+                    >
+                      <g data-mml-node="mo">
+                        <use data-c="28" xlink:href="#MJX-1-NCM-S5-28"></use>
+                      </g>
+                    </g>
+                    <g data-mml-node="mfrac" transform="translate(663,0)">
+                      <g
+                        data-mml-node="mi"
+                        data-latex="n"
+                        transform="translate(0,676)"
+                      >
+                        <use
+                          data-c="1D45B"
+                          xlink:href="#MJX-1-NCM-I-1D45B"
+                        ></use>
+                      </g>
+                      <g
+                        data-mml-node="mi"
+                        data-latex="i"
+                        transform="translate(127.5,-686)"
+                      >
+                        <use
+                          data-c="1D456"
+                          xlink:href="#MJX-1-NCM-I-1D456"
+                        ></use>
+                      </g>
+                    </g>
+                    <g
+                      data-mml-node="TeXAtom"
+                      data-latex="\biggr )"
+                      data-mjx-texclass="CLOSE"
+                      transform="translate(1263,0)"
+                    >
+                      <g data-mml-node="mo">
+                        <use data-c="29" xlink:href="#MJX-1-NCM-S5-29"></use>
+                      </g>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="("
+                    transform="translate(6768.2,0)"
+                  >
+                    <use data-c="28" xlink:href="#MJX-1-NCM-N-28"></use>
+                  </g>
+                  <g
+                    data-mml-node="mn"
+                    data-latex="1"
+                    transform="translate(7157.2,0)"
+                  >
+                    <use data-c="31" xlink:href="#MJX-1-NCM-N-31"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="-"
+                    transform="translate(7879.4,0)"
+                  >
+                    <use data-c="2212" xlink:href="#MJX-1-NCM-N-2212"></use>
+                  </g>
+                  <g
+                    data-mml-node="mi"
+                    data-latex="t"
+                    transform="translate(8879.7,0)"
+                  >
+                    <use data-c="1D461" xlink:href="#MJX-1-NCM-I-1D461"></use>
+                  </g>
+                  <g
+                    data-mml-node="msup"
+                    data-latex=")^{n-i}"
+                    transform="translate(9240.7,0)"
+                  >
+                    <g data-mml-node="mo" data-latex=")">
+                      <use data-c="29" xlink:href="#MJX-1-NCM-N-29"></use>
+                    </g>
+                    <g
+                      data-mml-node="TeXAtom"
+                      transform="translate(422,413) scale(0.707)"
+                      data-latex="{n-i}"
+                      data-mjx-texclass="ORD"
+                    >
+                      <g data-mml-node="mi" data-latex="n">
+                        <use
+                          data-c="1D45B"
+                          xlink:href="#MJX-1-NCM-I-1D45B"
+                        ></use>
+                      </g>
+                      <g
+                        data-mml-node="mo"
+                        data-latex="-"
+                        transform="translate(600,0)"
+                      >
+                        <use data-c="2212" xlink:href="#MJX-1-NCM-N-2212"></use>
+                      </g>
+                      <g
+                        data-mml-node="mi"
+                        data-latex="i"
+                        transform="translate(1378,0)"
+                      >
+                        <use
+                          data-c="1D456"
+                          xlink:href="#MJX-1-NCM-I-1D456"
+                        ></use>
+                      </g>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="msup"
+                    data-latex="t^i"
+                    transform="translate(10931,0)"
+                  >
+                    <g data-mml-node="mi" data-latex="t">
+                      <use data-c="1D461" xlink:href="#MJX-1-NCM-I-1D461"></use>
+                    </g>
+                    <g
+                      data-mml-node="mi"
+                      transform="translate(394,413) scale(0.707)"
+                      data-latex="i"
+                    >
+                      <use data-c="1D456" xlink:href="#MJX-1-NCM-I-1D456"></use>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="msub"
+                    data-latex="P_i"
+                    transform="translate(11619,0)"
+                  >
+                    <g data-mml-node="mi" data-latex="P">
+                      <use data-c="1D443" xlink:href="#MJX-1-NCM-I-1D443"></use>
+                    </g>
+                    <g
+                      data-mml-node="mi"
+                      transform="translate(675,-150) scale(0.707)"
+                      data-latex="i"
+                    >
+                      <use data-c="1D456" xlink:href="#MJX-1-NCM-I-1D456"></use>
+                    </g>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex=","
+                    transform="translate(12587.9,0)"
+                  >
+                    <use data-c="2C" xlink:href="#MJX-1-NCM-N-2C"></use>
+                  </g>
+                  <g
+                    data-mml-node="mspace"
+                    data-latex="\quad"
+                    transform="translate(12865.9,0)"
+                  ></g>
+                  <g
+                    data-mml-node="mi"
+                    data-latex="t"
+                    transform="translate(14032.6,0)"
+                  >
+                    <use data-c="1D461" xlink:href="#MJX-1-NCM-I-1D461"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="\in"
+                    transform="translate(14671.4,0)"
+                  >
+                    <use data-c="2208" xlink:href="#MJX-1-NCM-N-2208"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="["
+                    transform="translate(15616.1,0)"
+                  >
+                    <use data-c="5B" xlink:href="#MJX-1-NCM-N-5B"></use>
+                  </g>
+                  <g
+                    data-mml-node="mn"
+                    data-latex="0"
+                    transform="translate(15894.1,0)"
+                  >
+                    <use data-c="30" xlink:href="#MJX-1-NCM-N-30"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex=","
+                    transform="translate(16394.1,0)"
+                  >
+                    <use data-c="2C" xlink:href="#MJX-1-NCM-N-2C"></use>
+                  </g>
+                  <g
+                    data-mml-node="mn"
+                    data-latex="1"
+                    transform="translate(16838.8,0)"
+                  >
+                    <use data-c="31" xlink:href="#MJX-1-NCM-N-31"></use>
+                  </g>
+                  <g
+                    data-mml-node="mo"
+                    data-latex="]"
+                    transform="translate(17338.8,0)"
+                  >
+                    <use data-c="5D" xlink:href="#MJX-1-NCM-N-5D"></use>
+                  </g>
+                </g>
+              </g></svg
+          ></span>
+          <span>1.</span> 输入坐标添加点，支持中文逗号<br />
+          <span>2.</span> 至少 3 个点绘制贝塞尔曲线<br />
+          <span>3.</span> 拖拽红色控制点实时调整曲线<br />
+          <span>4.</span> 双击控制点编辑精确坐标<br />
+          <span>5.</span> 右键控制点弹出编辑/删除菜单<br />
+          <span>6.</span> 画布空白处点击添加点<br />
+          <span>7.</span> 按住 Space + 拖拽平移画布<br />
+          <span>8.</span> 滚轮缩放视图<br />
+          <span>9.</span> Y 轴向上为正（数学坐标系）
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas-area">
+      <canvas id="mainCanvas"></canvas>
+      <div class="canvas-info" id="canvasInfo">
+        点数: <span class="val" id="infoCount">0</span> &nbsp;|&nbsp; 缩放:
+        <span class="val" id="infoScale">100%</span>
+      </div>
+      <div class="pan-hint" id="panHint">
+        <i class="fas fa-arrows-alt"></i> 拖拽平移画布
+      </div>
+    </main>
+
+    <div class="context-menu" id="contextMenu">
+      <div class="context-menu-item" id="ctxEdit">
+        <i class="fas fa-pen"></i> 编辑坐标
+      </div>
+      <div class="context-menu-item danger" id="ctxDelete">
+        <i class="fas fa-trash"></i> 删除点
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+      <div class="modal" role="dialog" aria-label="编辑坐标">
+        <h3>编辑坐标</h3>
+        <div class="modal-field">
+          <label for="editX">X 坐标</label>
+          <input type="number" id="editX" step="any" />
+        </div>
+        <div class="modal-field">
+          <label for="editY">Y 坐标</label>
+          <input type="number" id="editY" step="any" />
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="editCancel">取消</button>
+          <button class="btn btn-accent" id="editConfirm">确认</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="cursor-tooltip" id="cursorTooltip"></div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ========== 状态 ==========
+        const state = {
+          points: [],
+          showPoints: true,
+          showLines: true,
+          showGrid: true,
+          showAxes: true,
+          isDark: true,
+          offsetX: 0,
+          offsetY: 0,
+          scale: 1,
+          draggingIndex: -1,
+          dragOffsetX: 0,
+          dragOffsetY: 0,
+          panning: false,
+          panStartX: 0,
+          panStartY: 0,
+          panOffsetStartX: 0,
+          panOffsetStartY: 0,
+          contextPointIndex: -1,
+          editIndex: -1,
+          hoverIndex: -1,
+          animPhase: 0,
+        };
+
+        // ========== 画布主题色 ==========
+        function getCanvasTheme() {
+          if (state.isDark) {
+            return {
+              canvasBg: "#0c0e14",
+              bgGlow: "rgba(0,229,160,0.02)",
+              gridLine: "rgba(255,255,255,0.04)",
+              gridLineMajor: "rgba(255,255,255,0.10)",
+              axisLine: "rgba(255,255,255,0.28)",
+              axisArrow: "rgba(255,255,255,0.35)",
+              axisLabel: "rgba(255,255,255,0.45)",
+              controlLine: "#5a5e78",
+              curve: "#00e5a0",
+              curveGlow: "rgba(0,229,160,0.4)",
+              curveHighlight: "rgba(102,255,204,0.5)",
+              pointFill: "#ff6b6b",
+              pointStroke: "#cc3333",
+              pointHoverFill: "#ff8888",
+              pointDragFill: "#ff4444",
+              pointGlow: "rgba(255,107,107,0.12)",
+              pointText: "#ffffff",
+            };
+          } else {
+            return {
+              canvasBg: "#f8f9fd",
+              bgGlow: "rgba(0,168,118,0.015)",
+              gridLine: "rgba(0,0,0,0.05)",
+              gridLineMajor: "rgba(0,0,0,0.10)",
+              axisLine: "rgba(0,0,0,0.25)",
+              axisArrow: "rgba(0,0,0,0.35)",
+              axisLabel: "rgba(0,0,0,0.5)",
+              controlLine: "#8888aa",
+              curve: "#009966",
+              curveGlow: "rgba(0,153,102,0.25)",
+              curveHighlight: "rgba(0,200,130,0.3)",
+              pointFill: "#e53935",
+              pointStroke: "#b71c1c",
+              pointHoverFill: "#ef5350",
+              pointDragFill: "#c62828",
+              pointGlow: "rgba(229,57,53,0.08)",
+              pointText: "#ffffff",
+            };
+          }
+        }
+
+        // ========== DOM ==========
+        const canvas = document.getElementById("mainCanvas");
+        const ctx = canvas.getContext("2d");
+        const coordInput = document.getElementById("coordInput");
+        const addBtn = document.getElementById("addBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const autoAdjustBtn = document.getElementById("autoAdjustBtn");
+        const exportBtn = document.getElementById("exportBtn");
+        const exportDropdown = document.getElementById("exportDropdown");
+        const pointsList = document.getElementById("pointsList");
+        const contextMenu = document.getElementById("contextMenu");
+        const editModal = document.getElementById("editModal");
+        const editX = document.getElementById("editX");
+        const editY = document.getElementById("editY");
+        const editCancel = document.getElementById("editCancel");
+        const editConfirm = document.getElementById("editConfirm");
+        const infoCount = document.getElementById("infoCount");
+        const infoScale = document.getElementById("infoScale");
+        const cursorTooltip = document.getElementById("cursorTooltip");
+        const panHint = document.getElementById("panHint");
+        const themeToggle = document.getElementById("themeToggle");
+
+        const togglePoints = document.getElementById("togglePoints");
+        const toggleLines = document.getElementById("toggleLines");
+        const toggleGrid = document.getElementById("toggleGrid");
+        const toggleAxes = document.getElementById("toggleAxes");
+
+        const POINT_RADIUS = 8;
+        const POINT_HIT_RADIUS = 14;
+        const CURVE_SEGMENTS = 200;
+        const VIEW_PADDING = 60;
+
+        // ========== 画布尺寸 ==========
+        function resizeCanvas() {
+          const area = canvas.parentElement;
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = area.clientWidth * dpr;
+          canvas.height = area.clientHeight * dpr;
+          canvas.style.width = area.clientWidth + "px";
+          canvas.style.height = area.clientHeight + "px";
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          draw();
+        }
+        window.addEventListener("resize", resizeCanvas);
+
+        // ========== 坐标变换（Y 轴向上为正） ==========
+        function logicalToView(lx, ly) {
+          return {
+            x: lx * state.scale + state.offsetX,
+            y: -ly * state.scale + state.offsetY, // Y 翻转
+          };
+        }
+
+        function viewToLogical(vx, vy) {
+          return {
+            x: (vx - state.offsetX) / state.scale,
+            y: -(vy - state.offsetY) / state.scale, // Y 翻转
+          };
+        }
+
+        // ========== 自动调整视图 ==========
+        function autoAdjustView() {
+          const w = canvas.parentElement.clientWidth;
+          const h = canvas.parentElement.clientHeight;
+
+          if (state.points.length === 0) {
+            state.offsetX = w / 2;
+            state.offsetY = h / 2;
+            state.scale = 1;
+            updateInfo();
+            draw();
+            return;
+          }
+
+          let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+          for (const p of state.points) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+          }
+          if (minX === maxX) {
+            minX -= 50;
+            maxX += 50;
+          }
+          if (minY === maxY) {
+            minY -= 50;
+            maxY += 50;
+          }
+
+          const logicalW = maxX - minX;
+          const logicalH = maxY - minY;
+          const scaleX = (w - 2 * VIEW_PADDING) / logicalW;
+          const scaleY = (h - 2 * VIEW_PADDING) / logicalH;
+          state.scale = Math.min(scaleX, scaleY);
+
+          const viewW = logicalW * state.scale;
+          const viewH = logicalH * state.scale;
+
+          // X：标准映射
+          state.offsetX = (w - viewW) / 2 - minX * state.scale;
+          // Y：翻转映射 — maxY 在视图顶部，minY 在视图底部
+          state.offsetY = (h - viewH) / 2 + maxY * state.scale;
+
+          updateInfo();
+          draw();
+        }
+
+        // ========== 贝塞尔曲线计算 ==========
+        function binomial(n, k) {
+          if (k < 0 || k > n) return 0;
+          if (k === 0 || k === n) return 1;
+          let r = 1;
+          for (let i = 0; i < k; i++) r = (r * (n - i)) / (i + 1);
+          return r;
+        }
+
+        function calculateBezierCurve() {
+          const pts = state.points;
+          if (pts.length < 3) return [];
+          const n = pts.length - 1;
+          const curvePoints = [];
+          for (let s = 0; s <= CURVE_SEGMENTS; s++) {
+            const t = s / CURVE_SEGMENTS;
+            let x = 0,
+              y = 0;
+            for (let i = 0; i <= n; i++) {
+              const b =
+                binomial(n, i) * Math.pow(1 - t, n - i) * Math.pow(t, i);
+              x += pts[i].x * b;
+              y += pts[i].y * b;
+            }
+            curvePoints.push({ x, y });
+          }
+          return curvePoints;
+        }
+
+        // ========== 绘制 ==========
+        function draw() {
+          const w = canvas.parentElement.clientWidth;
+          const h = canvas.parentElement.clientHeight;
+          const theme = getCanvasTheme();
+
+          ctx.clearRect(0, 0, w, h);
+
+          // 背景
+          ctx.fillStyle = theme.canvasBg;
+          ctx.fillRect(0, 0, w, h);
+
+          // 微妙径向渐变
+          const bgGrad = ctx.createRadialGradient(
+            w * 0.3,
+            h * 0.4,
+            0,
+            w * 0.3,
+            h * 0.4,
+            w * 0.7,
+          );
+          bgGrad.addColorStop(0, theme.bgGlow);
+          bgGrad.addColorStop(1, "rgba(0,0,0,0)");
+          ctx.fillStyle = bgGrad;
+          ctx.fillRect(0, 0, w, h);
+
+          // 网格
+          if (state.showGrid) drawGrid(w, h, theme);
+          // 坐标轴
+          if (state.showAxes) drawAxes(w, h, theme);
+          // 控制点连线
+          if (state.showLines && state.points.length > 1)
+            drawControlLines(theme);
+          // 贝塞尔曲线
+          if (state.points.length >= 3) drawBezierCurve(theme);
+          // 控制点
+          if (state.showPoints) drawControlPoints(theme);
+        }
+
+        function drawGrid(w, h, theme) {
+          let logicalStep = 50;
+          const viewStep = logicalStep * state.scale;
+          if (viewStep < 20) logicalStep = 100;
+          if (viewStep < 10) logicalStep = 200;
+          if (viewStep > 200) logicalStep = 25;
+          if (viewStep > 400) logicalStep = 10;
+
+          const minL = viewToLogical(0, 0);
+          const maxL = viewToLogical(w, h);
+
+          const startX =
+            Math.floor(Math.min(minL.x, maxL.x) / logicalStep) * logicalStep;
+          const endX =
+            Math.ceil(Math.max(minL.x, maxL.x) / logicalStep) * logicalStep;
+          const startY =
+            Math.floor(Math.min(minL.y, maxL.y) / logicalStep) * logicalStep;
+          const endY =
+            Math.ceil(Math.max(minL.y, maxL.y) / logicalStep) * logicalStep;
+
+          ctx.lineWidth = 1;
+
+          for (let lx = startX; lx <= endX; lx += logicalStep) {
+            const vp = logicalToView(lx, 0);
+            const isAxis = Math.abs(lx) < 0.001;
+            ctx.strokeStyle = isAxis ? theme.gridLineMajor : theme.gridLine;
+            ctx.beginPath();
+            ctx.moveTo(Math.round(vp.x) + 0.5, 0);
+            ctx.lineTo(Math.round(vp.x) + 0.5, h);
+            ctx.stroke();
+          }
+
+          for (let ly = startY; ly <= endY; ly += logicalStep) {
+            const vp = logicalToView(0, ly);
+            const isAxis = Math.abs(ly) < 0.001;
+            ctx.strokeStyle = isAxis ? theme.gridLineMajor : theme.gridLine;
+            ctx.beginPath();
+            ctx.moveTo(0, Math.round(vp.y) + 0.5);
+            ctx.lineTo(w, Math.round(vp.y) + 0.5);
+            ctx.stroke();
+          }
+        }
+
+        function drawAxes(w, h, theme) {
+          const origin = logicalToView(0, 0);
+          ctx.lineWidth = 1.5;
+
+          // X 轴
+          if (origin.y >= -10 && origin.y <= h + 10) {
+            ctx.strokeStyle = theme.axisLine;
+            ctx.beginPath();
+            ctx.moveTo(0, origin.y);
+            ctx.lineTo(w, origin.y);
+            ctx.stroke();
+
+            // 箭头（正方向 → 右侧）
+            ctx.fillStyle = theme.axisArrow;
+            ctx.beginPath();
+            ctx.moveTo(w - 2, origin.y);
+            ctx.lineTo(w - 12, origin.y - 5);
+            ctx.lineTo(w - 12, origin.y + 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 标签
+            ctx.font = "600 12px JetBrains Mono, monospace";
+            ctx.fillStyle = theme.axisLabel;
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText("x", w - 16, origin.y - 6);
+          }
+
+          // Y 轴
+          if (origin.x >= -10 && origin.x <= w + 10) {
+            ctx.strokeStyle = theme.axisLine;
+            ctx.beginPath();
+            ctx.moveTo(origin.x, 0);
+            ctx.lineTo(origin.x, h);
+            ctx.stroke();
+
+            // 箭头（正方向 → 上方）
+            ctx.fillStyle = theme.axisArrow;
+            ctx.beginPath();
+            ctx.moveTo(origin.x, 2);
+            ctx.lineTo(origin.x - 5, 12);
+            ctx.lineTo(origin.x + 5, 12);
+            ctx.closePath();
+            ctx.fill();
+
+            // 标签
+            ctx.font = "600 12px JetBrains Mono, monospace";
+            ctx.fillStyle = theme.axisLabel;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText("y", origin.x + 8, 4);
+          }
+
+          // 原点 O
+          if (
+            origin.x > 10 &&
+            origin.x < w - 10 &&
+            origin.y > 10 &&
+            origin.y < h - 10
+          ) {
+            ctx.font = "600 11px JetBrains Mono, monospace";
+            ctx.fillStyle = theme.axisLabel;
+            ctx.textAlign = "right";
+            ctx.textBaseline = "top";
+            ctx.fillText("O", origin.x - 6, origin.y + 4);
+          }
+        }
+
+        function drawControlLines(theme) {
+          ctx.save();
+          ctx.setLineDash([6, 4]);
+          ctx.strokeStyle = theme.controlLine;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let i = 0; i < state.points.length; i++) {
+            const vp = logicalToView(state.points[i].x, state.points[i].y);
+            if (i === 0) ctx.moveTo(vp.x, vp.y);
+            else ctx.lineTo(vp.x, vp.y);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function drawBezierCurve(theme) {
+          const curvePoints = calculateBezierCurve();
+          if (curvePoints.length < 2) return;
+
+          // 发光层
+          ctx.save();
+          ctx.shadowColor = theme.curveGlow;
+          ctx.shadowBlur = 14;
+          ctx.strokeStyle = theme.curve;
+          ctx.lineWidth = 2.5;
+          ctx.lineJoin = "round";
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          for (let i = 0; i < curvePoints.length; i++) {
+            const vp = logicalToView(curvePoints[i].x, curvePoints[i].y);
+            if (i === 0) ctx.moveTo(vp.x, vp.y);
+            else ctx.lineTo(vp.x, vp.y);
+          }
+          ctx.stroke();
+          ctx.restore();
+
+          // 高亮细线
+          ctx.strokeStyle = theme.curveHighlight;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          for (let i = 0; i < curvePoints.length; i++) {
+            const vp = logicalToView(curvePoints[i].x, curvePoints[i].y);
+            if (i === 0) ctx.moveTo(vp.x, vp.y);
+            else ctx.lineTo(vp.x, vp.y);
+          }
+          ctx.stroke();
+        }
+
+        function drawControlPoints(theme) {
+          for (let i = 0; i < state.points.length; i++) {
+            const p = state.points[i];
+            const vp = logicalToView(p.x, p.y);
+            const isHover = i === state.hoverIndex;
+            const isDrag = i === state.draggingIndex;
+            const r = isDrag
+              ? POINT_RADIUS + 3
+              : isHover
+                ? POINT_RADIUS + 2
+                : POINT_RADIUS;
+
+            // 外圈光晕
+            if (isHover || isDrag) {
+              ctx.beginPath();
+              ctx.arc(vp.x, vp.y, r + 8, 0, Math.PI * 2);
+              ctx.fillStyle = theme.pointGlow;
+              ctx.fill();
+            }
+
+            // 外环
+            ctx.beginPath();
+            ctx.arc(vp.x, vp.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = isDrag
+              ? theme.pointDragFill
+              : isHover
+                ? theme.pointHoverFill
+                : theme.pointFill;
+            ctx.fill();
+            ctx.strokeStyle = theme.pointStroke;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 序号
+            ctx.fillStyle = theme.pointText;
+            ctx.font = "bold 9px JetBrains Mono, monospace";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(i, vp.x, vp.y);
+          }
+        }
+
+        // ========== 动画循环 ==========
+        function animLoop() {
+          state.animPhase += 0.02;
+          draw();
+          requestAnimationFrame(animLoop);
+        }
+
+        // ========== 列表更新 ==========
+        function updatePointsList() {
+          if (state.points.length === 0) {
+            pointsList.innerHTML =
+              '<div class="empty-list">暂无控制点，请添加</div>';
+            infoCount.textContent = "0";
+            return;
+          }
+          infoCount.textContent = state.points.length;
+
+          let html = "";
+          for (let i = 0; i < state.points.length; i++) {
+            const p = state.points[i];
+            html += `<div class="point-item" data-index="${i}" role="listitem">
+        <div class="point-badge">${i}</div>
+        <div class="point-coords">(${p.x.toFixed(1)}, ${p.y.toFixed(1)})</div>
+        <div class="point-actions">
+          <button class="point-action-btn edit-btn" data-index="${i}" title="编辑"><i class="fas fa-pen"></i></button>
+          <button class="point-action-btn" data-index="${i}" title="删除"><i class="fas fa-times"></i></button>
+        </div>
+      </div>`;
+          }
+          pointsList.innerHTML = html;
+
+          pointsList.querySelectorAll(".edit-btn").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              openEditModal(parseInt(btn.dataset.index));
+            });
+          });
+          pointsList
+            .querySelectorAll(".point-action-btn:not(.edit-btn)")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                deletePoint(parseInt(btn.dataset.index));
+              });
+            });
+          pointsList.querySelectorAll(".point-item").forEach((item) => {
+            item.addEventListener("dblclick", () => {
+              openEditModal(parseInt(item.dataset.index));
+            });
+          });
+        }
+
+        function updateInfo() {
+          infoCount.textContent = state.points.length;
+          infoScale.textContent = Math.round(state.scale * 100) + "%";
+        }
+
+        // ========== 添加/删除 ==========
+        function addPoint(x, y) {
+          state.points.push({ x, y });
+          updatePointsList();
+          draw();
+        }
+
+        function addPointFromInput() {
+          let text = coordInput.value.trim();
+          if (!text) {
+            showToast("请输入坐标", "error");
+            return;
+          }
+          text = text.replace(/，/g, ",");
+          const parts = text.split(",");
+          if (parts.length !== 2) {
+            showToast("坐标格式不正确，请使用 x,y", "error");
+            return;
+          }
+          const x = parseFloat(parts[0].trim());
+          const y = parseFloat(parts[1].trim());
+          if (isNaN(x) || isNaN(y)) {
+            showToast("坐标必须是数字", "error");
+            return;
+          }
+          addPoint(x, y);
+          coordInput.value = "";
+          showToast(`已添加点 (${x.toFixed(1)}, ${y.toFixed(1)})`, "success");
+        }
+
+        function deletePoint(index) {
+          if (index < 0 || index >= state.points.length) return;
+          state.points.splice(index, 1);
+          updatePointsList();
+          draw();
+          showToast(`已删除点 ${index}`, "success");
+        }
+
+        // ========== 编辑对话框 ==========
+        function openEditModal(index) {
+          if (index < 0 || index >= state.points.length) return;
+          state.editIndex = index;
+          editX.value = state.points[index].x;
+          editY.value = state.points[index].y;
+          editModal.classList.add("show");
+          editX.focus();
+          editX.select();
+        }
+
+        function closeEditModal() {
+          editModal.classList.remove("show");
+          state.editIndex = -1;
+        }
+
+        function confirmEdit() {
+          const idx = state.editIndex;
+          if (idx < 0 || idx >= state.points.length) return;
+          const x = parseFloat(editX.value);
+          const y = parseFloat(editY.value);
+          if (isNaN(x) || isNaN(y)) {
+            showToast("坐标必须是数字", "error");
+            return;
+          }
+          state.points[idx].x = x;
+          state.points[idx].y = y;
+          updatePointsList();
+          draw();
+          closeEditModal();
+          showToast("坐标已更新", "success");
+        }
+
+        // ========== Toast ==========
+        function showToast(msg, type) {
+          const container = document.getElementById("toastContainer");
+          const toast = document.createElement("div");
+          toast.className = `toast ${type || ""}`;
+          const icon =
+            type === "success"
+              ? "fa-check-circle"
+              : type === "error"
+                ? "fa-exclamation-circle"
+                : "fa-info-circle";
+          toast.innerHTML = `<i class="fas ${icon}"></i> ${msg}`;
+          container.appendChild(toast);
+          setTimeout(() => {
+            toast.style.animation = "toastOut 0.3s ease-out forwards";
+            setTimeout(() => toast.remove(), 300);
+          }, 2200);
+        }
+
+        // ========== 命中测试 ==========
+        function hitTestPoint(vx, vy) {
+          for (let i = state.points.length - 1; i >= 0; i--) {
+            const vp = logicalToView(state.points[i].x, state.points[i].y);
+            const dx = vx - vp.x;
+            const dy = vy - vp.y;
+            if (dx * dx + dy * dy <= POINT_HIT_RADIUS * POINT_HIT_RADIUS)
+              return i;
+          }
+          return -1;
+        }
+
+        // ========== 鼠标事件 ==========
+        let spaceHeld = false;
+
+        function getCanvasPos(e) {
+          const rect = canvas.getBoundingClientRect();
+          return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        // 空格键控制平移模式
+        document.addEventListener("keydown", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+            return;
+          if (e.code === "Space" && !e.repeat) {
+            e.preventDefault();
+            spaceHeld = true;
+            panHint.classList.add("show");
+            canvas.style.cursor = "grab";
+          }
+        });
+        document.addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            spaceHeld = false;
+            panHint.classList.remove("show");
+            if (state.panning) {
+              state.panning = false;
+            }
+            canvas.style.cursor =
+              state.hoverIndex >= 0 && state.showPoints ? "grab" : "crosshair";
+          }
+        });
+
+        canvas.addEventListener("mousedown", (e) => {
+          hideContextMenu();
+          const pos = getCanvasPos(e);
+
+          if (e.button === 0) {
+            if (spaceHeld) {
+              // Space + 左键拖拽 → 平移
+              state.panning = true;
+              state.panStartX = e.clientX;
+              state.panStartY = e.clientY;
+              state.panOffsetStartX = state.offsetX;
+              state.panOffsetStartY = state.offsetY;
+              canvas.style.cursor = "grabbing";
+            } else {
+              const hitIdx = hitTestPoint(pos.x, pos.y);
+              if (hitIdx >= 0 && state.showPoints) {
+                // 拖拽控制点
+                state.draggingIndex = hitIdx;
+                const vp = logicalToView(
+                  state.points[hitIdx].x,
+                  state.points[hitIdx].y,
+                );
+                state.dragOffsetX = pos.x - vp.x;
+                state.dragOffsetY = pos.y - vp.y;
+                canvas.style.cursor = "grabbing";
+              } else {
+                // 点击空白添加点
+                const lp = viewToLogical(pos.x, pos.y);
+                addPoint(
+                  Math.round(lp.x * 10) / 10,
+                  Math.round(lp.y * 10) / 10,
+                );
+                autoAdjustView();
+              }
+            }
+          } else if (e.button === 1) {
+            // 中键拖拽 → 平移
+            e.preventDefault();
+            state.panning = true;
+            state.panStartX = e.clientX;
+            state.panStartY = e.clientY;
+            state.panOffsetStartX = state.offsetX;
+            state.panOffsetStartY = state.offsetY;
+            canvas.style.cursor = "move";
+          }
+          // 右键不在此处理，由 contextmenu 事件处理
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+          const pos = getCanvasPos(e);
+
+          if (state.draggingIndex >= 0) {
+            const vx = pos.x - state.dragOffsetX;
+            const vy = pos.y - state.dragOffsetY;
+            const lp = viewToLogical(vx, vy);
+            state.points[state.draggingIndex].x = lp.x;
+            state.points[state.draggingIndex].y = lp.y;
+            updatePointsList();
+            return;
+          }
+
+          if (state.panning) {
+            const dx = e.clientX - state.panStartX;
+            const dy = e.clientY - state.panStartY;
+            state.offsetX = state.panOffsetStartX + dx;
+            state.offsetY = state.panOffsetStartY + dy;
+            updateInfo();
+            return;
+          }
+
+          // 悬停
+          const hitIdx = hitTestPoint(pos.x, pos.y);
+          state.hoverIndex = hitIdx;
+          if (!spaceHeld) {
+            canvas.style.cursor =
+              hitIdx >= 0 && state.showPoints ? "grab" : "crosshair";
+          }
+
+          // 坐标提示
+          const lp = viewToLogical(pos.x, pos.y);
+          cursorTooltip.textContent = `${lp.x.toFixed(1)}, ${lp.y.toFixed(1)}`;
+          cursorTooltip.style.left = e.clientX + 16 + "px";
+          cursorTooltip.style.top = e.clientY + 16 + "px";
+          cursorTooltip.style.display = "block";
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+          if (e.button === 0 && state.draggingIndex >= 0) {
+            state.draggingIndex = -1;
+            canvas.style.cursor = spaceHeld ? "grab" : "crosshair";
+          }
+          if ((e.button === 0 || e.button === 1) && state.panning) {
+            state.panning = false;
+            canvas.style.cursor = spaceHeld ? "grab" : "crosshair";
+          }
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+          state.hoverIndex = -1;
+          cursorTooltip.style.display = "none";
+          if (state.draggingIndex >= 0) state.draggingIndex = -1;
+          if (state.panning) state.panning = false;
+        });
+
+        // 右键菜单：只在控制点上阻止浏览器默认行为
+        canvas.addEventListener("contextmenu", (e) => {
+          const pos = getCanvasPos(e);
+          const hitIdx = hitTestPoint(pos.x, pos.y);
+          if (hitIdx >= 0 && state.showPoints) {
+            e.preventDefault(); // 仅在控制点上阻止浏览器右键
+            state.contextPointIndex = hitIdx;
+            showContextMenu(e.clientX, e.clientY);
+          }
+          // 空白处不阻止，浏览器原生右键菜单正常弹出
+        });
+
+        // 中键阻止默认
+        canvas.addEventListener("mousedown", (e) => {
+          if (e.button === 1) e.preventDefault();
+        });
+
+        // 滚轮缩放
+        canvas.addEventListener(
+          "wheel",
+          (e) => {
+            e.preventDefault();
+            const pos = getCanvasPos(e);
+            const oldScale = state.scale;
+            const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+            state.scale = Math.max(0.02, Math.min(80, state.scale * factor));
+
+            state.offsetX =
+              pos.x - (pos.x - state.offsetX) * (state.scale / oldScale);
+            state.offsetY =
+              pos.y - (pos.y - state.offsetY) * (state.scale / oldScale);
+
+            updateInfo();
+          },
+          { passive: false },
+        );
+
+        // ========== 右键菜单 ==========
+        function showContextMenu(x, y) {
+          contextMenu.style.left = x + "px";
+          contextMenu.style.top = y + "px";
+          contextMenu.style.display = "block";
+        }
+
+        function hideContextMenu() {
+          contextMenu.style.display = "none";
+          state.contextPointIndex = -1;
+        }
+
+        document.addEventListener("click", (e) => {
+          if (!contextMenu.contains(e.target)) hideContextMenu();
+          if (
+            !exportDropdown.contains(e.target) &&
+            e.target !== exportBtn &&
+            !exportBtn.contains(e.target)
+          ) {
+            exportDropdown.classList.remove("show");
+          }
+        });
+
+        document.getElementById("ctxEdit").addEventListener("click", () => {
+          if (state.contextPointIndex >= 0)
+            openEditModal(state.contextPointIndex);
+          hideContextMenu();
+        });
+
+        document.getElementById("ctxDelete").addEventListener("click", () => {
+          if (state.contextPointIndex >= 0)
+            deletePoint(state.contextPointIndex);
+          hideContextMenu();
+        });
+
+        // ========== 按钮事件 ==========
+        addBtn.addEventListener("click", addPointFromInput);
+        coordInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") addPointFromInput();
+        });
+
+        clearBtn.addEventListener("click", () => {
+          if (state.points.length === 0) return;
+          state.points = [];
+          updatePointsList();
+          draw();
+          showToast("已清除所有点", "success");
+        });
+
+        autoAdjustBtn.addEventListener("click", () => {
+          autoAdjustView();
+          showToast("视图已自动调整", "success");
+        });
+
+        // 导出下拉
+        exportBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const rect = exportBtn.getBoundingClientRect();
+          exportDropdown.style.left = rect.left + "px";
+          exportDropdown.style.top = rect.bottom + 4 + "px";
+          exportDropdown.classList.toggle("show");
+        });
+
+        document.getElementById("expSVG").addEventListener("click", () => {
+          exportDropdown.classList.remove("show");
+          exportAsSVG();
+        });
+        document.getElementById("expEPS").addEventListener("click", () => {
+          exportDropdown.classList.remove("show");
+          exportAsEPS();
+        });
+        document.getElementById("expPNG").addEventListener("click", () => {
+          exportDropdown.classList.remove("show");
+          exportAsImage("png");
+        });
+        document.getElementById("expJPG").addEventListener("click", () => {
+          exportDropdown.classList.remove("show");
+          exportAsImage("jpeg");
+        });
+
+        // 开关
+        function setupToggle(el, key) {
+          el.addEventListener("click", () => {
+            state[key] = !state[key];
+            el.classList.toggle("active", state[key]);
+            el.setAttribute("aria-checked", state[key]);
+          });
+          el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              el.click();
+            }
+          });
+        }
+        setupToggle(togglePoints, "showPoints");
+        setupToggle(toggleLines, "showLines");
+        setupToggle(toggleGrid, "showGrid");
+        setupToggle(toggleAxes, "showAxes");
+
+        // 编辑对话框
+        editCancel.addEventListener("click", closeEditModal);
+        editConfirm.addEventListener("click", confirmEdit);
+        editModal.addEventListener("click", (e) => {
+          if (e.target === editModal) closeEditModal();
+        });
+        editX.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") confirmEdit();
+        });
+        editY.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") confirmEdit();
+        });
+
+        // ========== 主题切换 ==========
+        themeToggle.addEventListener("click", () => {
+          state.isDark = !state.isDark;
+          document.documentElement.classList.toggle("light", !state.isDark);
+          themeToggle.innerHTML = state.isDark
+            ? '<i class="fas fa-moon"></i>'
+            : '<i class="fas fa-sun"></i>';
+          draw();
+        });
+
+        // ========== 导出 SVG ==========
+        function exportAsSVG() {
+          if (state.points.length === 0) {
+            showToast("请先添加控制点", "error");
+            return;
+          }
+
+          let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+          for (const p of state.points) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+          }
+          if (minX === maxX) {
+            minX -= 50;
+            maxX += 50;
+          }
+          if (minY === maxY) {
+            minY -= 50;
+            maxY += 50;
+          }
+
+          const padding = 50;
+          const width = maxX - minX + 2 * padding;
+          const height = maxY - minY + 2 * padding;
+
+          // SVG 中 Y 轴翻转：svgY = height - (logicalY - minY + padding)
+          function svgX(lx) {
+            return lx - minX + padding;
+          }
+          function svgY(ly) {
+            return height - (ly - minY + padding);
+          }
+
+          let svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n`;
+          svg += `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">\n`;
+          svg += `  <rect width="100%" height="100%" fill="#ffffff"/>\n`;
+
+          if (state.showGrid) {
+            svg += `  <defs>\n`;
+            svg += `    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">\n`;
+            svg += `      <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#e0e0e0" stroke-width="1"/>\n`;
+            svg += `    </pattern>\n`;
+            svg += `  </defs>\n`;
+            svg += `  <rect width="100%" height="100%" fill="url(#grid)"/>\n`;
+          }
+
+          if (state.showLines && state.points.length > 1) {
+            const pts = state.points
+              .map((p) => `${svgX(p.x)},${svgY(p.y)}`)
+              .join(" ");
+            svg += `  <polyline points="${pts}" fill="none" stroke="#646464" stroke-width="1" stroke-dasharray="5,5"/>\n`;
+          }
+
+          if (state.points.length >= 3) {
+            const curvePoints = calculateBezierCurve();
+            if (curvePoints.length > 0) {
+              let d = `M ${svgX(curvePoints[0].x)} ${svgY(curvePoints[0].y)}`;
+              for (let i = 1; i < curvePoints.length; i++) {
+                d += ` L ${svgX(curvePoints[i].x)} ${svgY(curvePoints[i].y)}`;
+              }
+              svg += `  <path d="${d}" fill="none" stroke="#009966" stroke-width="3"/>\n`;
+            }
+          }
+
+          if (state.showPoints) {
+            for (let i = 0; i < state.points.length; i++) {
+              const p = state.points[i];
+              svg += `  <circle cx="${svgX(p.x)}" cy="${svgY(p.y)}" r="6" fill="#FF6464" stroke="#C80000" stroke-width="1.5"/>\n`;
+              svg += `  <text x="${svgX(p.x)}" y="${svgY(p.y)}" text-anchor="middle" dominant-baseline="central" fill="white" font-family="Arial" font-size="8" font-weight="bold">${i}</text>\n`;
+            }
+          }
+
+          svg += `</svg>`;
+          downloadFile(svg, "bezier_curve.svg", "image/svg+xml");
+          showToast("SVG 文件已导出", "success");
+        }
+
+        // ========== 导出 EPS ==========
+        function exportAsEPS() {
+          if (state.points.length === 0) {
+            showToast("请先添加控制点", "error");
+            return;
+          }
+
+          let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+          for (const p of state.points) {
+            if (p.x < minX) minX = p.x;
+            if (p.x > maxX) maxX = p.x;
+            if (p.y < minY) minY = p.y;
+            if (p.y > maxY) maxY = p.y;
+          }
+          if (minX === maxX) {
+            minX -= 50;
+            maxX += 50;
+          }
+          if (minY === maxY) {
+            minY -= 50;
+            maxY += 50;
+          }
+
+          const padding = 50;
+          const width = Math.ceil(maxX - minX + 2 * padding);
+          const height = Math.ceil(maxY - minY + 2 * padding);
+
+          // EPS 中 Y 翻转：epsY = height - (logicalY - minY + padding)
+          function epsX(lx) {
+            return lx - minX + padding;
+          }
+          function epsY(ly) {
+            return height - (ly - minY + padding);
+          }
+
+          let eps = `%!PS-Adobe-3.0 EPSF-3.0\n`;
+          eps += `%%BoundingBox: 0 0 ${width} ${height}\n`;
+          eps += `%%Creator: Bezier Curve Tool\n`;
+          eps += `%%Title: Bezier Curve\n`;
+          eps += `%%EndComments\n\n`;
+
+          if (state.showGrid) {
+            eps += `% 网格\n0.9 0.9 0.9 setrgbcolor\n1 setlinewidth\n`;
+            eps += `newpath\n`;
+            for (let y = 0; y <= height; y += 50) {
+              eps += `0 ${y} moveto\n${width} ${y} lineto\n`;
+            }
+            eps += `stroke\nnewpath\n`;
+            for (let x = 0; x <= width; x += 50) {
+              eps += `${x} 0 moveto\n${x} ${height} lineto\n`;
+            }
+            eps += `stroke\n\n`;
+          }
+
+          if (state.showLines && state.points.length > 1) {
+            eps += `0.6 0.6 0.6 setrgbcolor\n[5 5] 0 setdash\n1 setlinewidth\nnewpath\n`;
+            eps += `${epsX(state.points[0].x)} ${epsY(state.points[0].y)} moveto\n`;
+            for (let i = 1; i < state.points.length; i++) {
+              eps += `${epsX(state.points[i].x)} ${epsY(state.points[i].y)} lineto\n`;
+            }
+            eps += `stroke\n[] 0 setdash\n\n`;
+          }
+
+          if (state.points.length >= 3) {
+            eps += `0 0.6 0.4 setrgbcolor\n2 setlinewidth\nnewpath\n`;
+            const curvePoints = calculateBezierCurve();
+            if (curvePoints.length > 0) {
+              eps += `${epsX(curvePoints[0].x)} ${epsY(curvePoints[0].y)} moveto\n`;
+              for (let i = 1; i < curvePoints.length; i++) {
+                eps += `${epsX(curvePoints[i].x)} ${epsY(curvePoints[i].y)} lineto\n`;
+              }
+            }
+            eps += `stroke\n\n`;
+          }
+
+          if (state.showPoints) {
+            eps += `1 setlinewidth\n`;
+            for (let i = 0; i < state.points.length; i++) {
+              const cx = epsX(state.points[i].x);
+              const cy = epsY(state.points[i].y);
+              eps += `1.0 0.4 0.4 setrgbcolor\nnewpath ${cx} ${cy} 6 0 360 arc fill\n`;
+              eps += `0.8 0.0 0.0 setrgbcolor\nnewpath ${cx} ${cy} 6 0 360 arc stroke\n`;
+            }
+          }
+
+          eps += `\n%%EOF\n`;
+          downloadFile(eps, "bezier_curve.eps", "application/postscript");
+          showToast("EPS 文件已导出，可用于 LaTeX", "success");
+        }
+
+        // ========== 导出 PNG / JPG ==========
+        function exportAsImage(format) {
+          if (state.points.length === 0) {
+            showToast("请先添加控制点", "error");
+            return;
+          }
+
+          // 临时清除悬停状态
+          const savedHover = state.hoverIndex;
+          state.hoverIndex = -1;
+
+          // 用当前画布直接导出
+          draw();
+
+          const mimeType = format === "jpeg" ? "image/jpeg" : "image/png";
+          const ext = format === "jpeg" ? "jpg" : "png";
+          const quality = format === "jpeg" ? 0.92 : undefined;
+
+          // 创建临时画布以确保白色背景（JPG 不支持透明）
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+          const tempCtx = tempCanvas.getContext("2d");
+
+          if (format === "jpeg") {
+            tempCtx.fillStyle = "#ffffff";
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+          }
+          tempCtx.drawImage(canvas, 0, 0);
+
+          const dataURL = tempCanvas.toDataURL(mimeType, quality);
+          const a = document.createElement("a");
+          a.href = dataURL;
+          a.download = `bezier_curve.${ext}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          // 恢复悬停
+          state.hoverIndex = savedHover;
+          draw();
+
+          showToast(`${ext.toUpperCase()} 文件已导出`, "success");
+        }
+
+        // ========== 文件下载 ==========
+        function downloadFile(content, filename, mimeType) {
+          const blob = new Blob([content], { type: mimeType });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+
+        // ========== 初始化 ==========
+        function init() {
+          state.points = [
+            { x: 100, y: 100 },
+            { x: 200, y: 300 },
+            { x: 300, y: 80 },
+            { x: 400, y: 320 },
+            { x: 500, y: 100 },
+          ];
+          updatePointsList();
+          resizeCanvas();
+          autoAdjustView();
+        }
+
+        init();
+        requestAnimationFrame(animLoop);
+      })();
+    </script>
+  </body>
+</html>
