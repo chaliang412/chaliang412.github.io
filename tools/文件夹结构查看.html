@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件夹结构查看器 (Web版)</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f5;
+            --panel-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+            --accent-color: #0078d4;
+            --accent-hover: #005a9e;
+            --disabled-color: #a0a0a0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .top-frame {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--accent-color);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: var(--disabled-color);
+            cursor: not-allowed;
+        }
+
+        .info-label {
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .progress-frame {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        progress {
+            flex-grow: 1;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        progress::-webkit-progress-bar {
+            background-color: #e0e0e0;
+            border-radius: 4px;
+        }
+
+        progress::-webkit-progress-value {
+            background-color: var(--accent-color);
+            border-radius: 4px;
+        }
+
+        .text-area {
+            width: 100%;
+            min-height: 400px;
+            max-height: 600px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            resize: vertical;
+            background-color: #fafafa;
+            overflow-y: auto;
+            white-space: pre;
+        }
+
+        .stats-frame {
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stats-frame .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .stats-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            grid-column: 1 / -1;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="warning-box" id="warningBox">
+        ⚠️ 您的浏览器不支持 File System Access API。请使用最新版的 Chrome 或 Edge 浏览器。
+    </div>
+
+    <div class="top-frame">
+        <button id="selectBtn">选择文件夹</button>
+        <button id="clearBtn">清除</button>
+        <button id="copyBtn" disabled>复制结构</button>
+    </div>
+
+    <div class="info-label" id="pathLabel">当前未选择文件夹</div>
+
+    <div class="progress-frame">
+        <div id="progressLabel" style="min-width: 60px;">进度: 0%</div>
+        <progress id="progressBar" value="0" max="100"></progress>
+    </div>
+
+    <div class="info-label" id="statusLabel">准备就绪</div>
+
+    <textarea id="textArea" class="text-area" readonly placeholder="文件夹结构将显示在这里..."></textarea>
+
+    <div class="stats-frame">
+        <div class="stats-title">统计信息</div>
+        <div id="statsFiles">文件总数: 0</div>
+        <div id="statsFolders">文件夹总数: 0</div>
+        <div id="statsSize">总大小: 0 bytes</div>
+        <div id="statsTypes" class="full-width">文件类型: 无</div>
+    </div>
+</div>
+
+<script>
+    // 检查浏览器是否支持 API
+    if (!('showDirectoryPicker' in window)) {
+        document.getElementById('warningBox').style.display = 'block';
+        document.getElementById('selectBtn').disabled = true;
+    }
+
+    const selectBtn = document.getElementById('selectBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const pathLabel = document.getElementById('pathLabel');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressBar = document.getElementById('progressBar');
+    const statusLabel = document.getElementById('statusLabel');
+    const textArea = document.getElementById('textArea');
+    const statsFiles = document.getElementById('statsFiles');
+    const statsFolders = document.getElementById('statsFolders');
+    const statsSize = document.getElementById('statsSize');
+    const statsTypes = document.getElementById('statsTypes');
+
+    let isScanning = false;
+    let currentStructure = "";
+    let totalFiles = 0;
+    let scannedFiles = 0;
+    
+    let stats = {
+        totalFiles: 0,
+        totalFolders: 0,
+        totalSize: 0,
+        fileTypes: {}
+    };
+
+    selectBtn.addEventListener('click', selectFolder);
+    clearBtn.addEventListener('click', clearOutput);
+    copyBtn.addEventListener('click', copyToClipboard);
+
+    async function selectFolder() {
+        if (isScanning) {
+            alert("当前正在扫描，请等待");
+            return;
+        }
+
+        try {
+            const dirHandle = await window.showDirectoryPicker();
+            startScanning(dirHandle);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                console.error(e);
+            }
+        }
+    }
+
+    async function startScanning(dirHandle) {
+        isScanning = true;
+        currentStructure = "";
+        scannedFiles = 0;
+        stats = { totalFiles: 0, totalFolders: 0, totalSize: 0, fileTypes: {} };
+        updateStatsDisplay();
+
+        pathLabel.textContent = `当前文件夹: ${dirHandle.name}`;
+        statusLabel.textContent = "正在计算文件总数...";
+        selectBtn.disabled = true;
+        copyBtn.disabled = true;
+        progressBar.value = 0;
+        progressLabel.textContent = "进度: 0%";
+        textArea.value = "";
+
+        // 异步执行，让 UI 有机会更新
+        await new Promise(r => setTimeout(r, 50));
+
+        try {
+            // 1. 预计算文件总数
+            totalFiles = await countFiles(dirHandle);
+
+            // 2. 扫描结构
+            statusLabel.textContent = "正在扫描文件夹...";
+            await new Promise(r => setTimeout(r, 50));
+            await scanFolder(dirHandle, '');
+
+            completeScanning();
+        } catch (e) {
+            statusLabel.textContent = `错误: ${e.message}`;
+            isScanning = false;
+            resetUIState();
+        }
+    }
+
+    async function countFiles(dirHandle) {
+        let count = 0;
+        for await (const entry of dirHandle.values()) {
+            if (entry.kind === 'file') {
+                count++;
+            } else if (entry.kind === 'directory') {
+                count += await countFiles(entry);
+            }
+            // 定期让出线程，防止计算大文件夹时页面假死
+            if (count % 500 === 0) await new Promise(r => setTimeout(r, 0));
+        }
+        return count;
+    }
+
+    async function scanFolder(dirHandle, indent) {
+        const entries = [];
+        for await (const entry of dirHandle.values()) {
+            entries.push(entry);
+        }
+        
+        // 按名称排序
+        entries.sort((a, b) => a.name.localeCompare(b.name));
+
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i];
+            const isLast = i === entries.length - 1;
+            const connector = isLast ? "└── " : "├── ";
+
+            if (entry.kind === 'directory') {
+                const line = indent + connector + `[${entry.name}]\n`;
+                appendText(line);
+                stats.totalFolders++;
+
+                const newIndent = indent + (isLast ? "    " : "│   ");
+                await scanFolder(entry, newIndent);
+            } else {
+                const line = indent + connector + entry.name + "\n";
+                appendText(line);
+                
+                stats.totalFiles++;
+
+                // 处理扩展名
+                const parts = entry.name.split('.');
+                const ext = parts.length > 1 ? parts.pop().toLowerCase() : '无扩展名';
+                stats.fileTypes[ext] = (stats.fileTypes[ext] || 0) + 1;
+
+                // 获取文件大小
+                try {
+                    const file = await entry.getFile();
+                    stats.totalSize += file.size;
+                } catch (e) {
+                    // 忽略无法读取的文件大小
+                }
+
+                scannedFiles++;
+                await updateProgress();
+            }
+        }
+    }
+
+    function appendText(text) {
+        currentStructure += text;
+        // 为了性能，不是每次都更新 DOM，在 updateProgress 中统一更新
+    }
+
+    async function updateProgress() {
+        const progress = totalFiles > 0 ? Math.round((scannedFiles / totalFiles) * 100) : 0;
+        progressBar.value = progress;
+        progressLabel.textContent = `进度: ${progress}%`;
+        
+        // 每扫描 20 个文件更新一次 UI 和统计，防止频繁操作 DOM 导致卡顿
+        if (scannedFiles % 20 === 0 || progress === 100) {
+            textArea.value = currentStructure;
+            textArea.scrollTop = textArea.scrollHeight; // 自动滚动到底部
+            updateStatsDisplay();
+            // 让出主线程，让浏览器重绘 UI
+            await new Promise(r => setTimeout(r, 0));
+        }
+    }
+
+    function completeScanning() {
+        isScanning = false;
+        statusLabel.textContent = "扫描完成";
+        copyBtn.disabled = false;
+        selectBtn.disabled = false;
+        progressBar.value = 100;
+        progressLabel.textContent = "进度: 100%";
+        
+        // 最终确保所有文本和统计都显示
+        textArea.value = currentStructure;
+        textArea.scrollTop = textArea.scrollHeight;
+        updateStatsDisplay();
+    }
+
+    function resetUIState() {
+        copyBtn.disabled = currentStructure === "";
+        selectBtn.disabled = false;
+    }
+
+    function updateStatsDisplay() {
+        statsFiles.textContent = `文件总数: ${stats.totalFiles}`;
+        statsFolders.textContent = `文件夹总数: ${stats.totalFolders}`;
+        statsSize.textContent = `总大小: ${formatSize(stats.totalSize)}`;
+
+        const sortedTypes = Object.entries(stats.fileTypes)
+                                  .sort((a, b) => b[1] - a[1])
+                                  .map(([ext, count]) => `${ext}: ${count}`);
+        const typesText = sortedTypes.length > 0 ? sortedTypes.join(", ") : "无";
+        statsTypes.textContent = `文件类型: ${typesText}`;
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return `${bytes} bytes`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+        if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
+
+    function clearOutput() {
+        if (isScanning) {
+            alert("当前正在扫描，请等待");
+            return;
+        }
+
+        textArea.value = "";
+        pathLabel.textContent = "当前未选择文件夹";
+        statusLabel.textContent = "准备就绪";
+        progressBar.value = 0;
+        progressLabel.textContent = "进度: 0%";
+
+        stats = { totalFiles: 0, totalFolders: 0, totalSize: 0, fileTypes: {} };
+        updateStatsDisplay();
+
+        currentStructure = "";
+        copyBtn.disabled = true;
+    }
+
+    async function copyToClipboard() {
+        if (!currentStructure) {
+            alert("没有可复制的内容");
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(currentStructure);
+            alert("文件夹结构已复制到剪贴板");
+        } catch (e) {
+            // 回退方案
+            textArea.select();
+            document.execCommand('copy');
+            alert("文件夹结构已复制到剪贴板");
+        }
+    }
+</script>
+
+</body>
+</html>
