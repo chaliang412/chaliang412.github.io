@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCM 解密 · 网易云音乐</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: #fff;
+            margin: 40px 20px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 0;
+            color: #C20C0C;
+        }
+        .drop-area {
+            border: 2px dashed #d0d0d0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #fafafa;
+        }
+        .drop-area:hover, .drop-area.drag-over {
+            border-color: #C20C0C;
+            background-color: #fff0f0;
+        }
+        .drop-area .icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .drop-area p {
+            margin: 5px 0;
+        }
+        .drop-area .hint {
+            font-size: 12px;
+            color: #999;
+        }
+        .file-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
+        }
+        .file-status {
+            font-size: 12px;
+            white-space: nowrap;
+            color: #666;
+        }
+        .empty {
+            text-align: center;
+            color: #aaa;
+            padding: 20px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background-color: #C20C0C;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #a00a0a;
+        }
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 NCM 解密 · 网易云音乐</h1>
+        <div class="drop-area" id="dropArea">
+            <div class="icon">📁</div>
+            <p>点击选择或拖拽 .ncm 文件</p>
+            <p class="hint">支持批量选择 · 转换后自动提供下载</p>
+            <input type="file" id="fileInput" multiple accept=".ncm" style="display: none;">
+        </div>
+        <div class="file-list" id="fileList">
+            <div class="empty">还没有添加文件 …</div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-primary" id="convertBtn">⚡ 开始转换</button>
+            <button class="btn btn-secondary" id="clearBtn">🗑️ 清空</button>
+        </div>
+        <div class="footer" id="footer">0 个文件</div>
+    </div>
+
+    <!-- 引入 CryptoJS 用于处理 AES-ECB 解密 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        let filesQueue = [];
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        const fileList = document.getElementById('fileList');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const footer = document.getElementById('footer');
+
+        // 绑定拖拽与点击事件
+        dropArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+            fileInput.value = ''; // 允许再次选择相同文件
+        });
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('drag-over');
+        });
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('drag-over');
+        });
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(fileListObj) {
+            for (let i = 0; i < fileListObj.length; i++) {
+                const file = fileListObj[i];
+                if (file.name.toLowerCase().endsWith('.ncm')) {
+                    filesQueue.push({ file: file, status: '待转换' });
+                }
+            }
+            renderList();
+        }
+
+        function renderList() {
+            fileList.innerHTML = '';
+            if (filesQueue.length === 0) {
+                fileList.innerHTML = '<div class="empty">还没有添加文件 …</div>';
+                footer.innerText = '0 个文件';
+                return;
+            }
+            footer.innerText = `${filesQueue.length} 个文件`;
+            filesQueue.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <span class="file-name">🎵 ${item.file.name}</span>
+                    <span class="file-status">${item.status}</span>
+                `;
+                fileList.appendChild(div);
+            });
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            convertBtn.disabled = true;
+            clearBtn.disabled = true;
+            
+            for (let i = 0; i < filesQueue.length; i++) {
+                if (filesQueue[i].status === '已完成') continue;
+                
+                filesQueue[i].status = '转换中...';
+                renderList();
+                
+                try {
+                    const result = await decryptNCM(filesQueue[i].file);
+                    downloadBlob(result.blob, result.filename);
+                    filesQueue[i].status = '已完成';
+                } catch (error) {
+                    console.error(error);
+                    filesQueue[i].status = '失败: ' + error.message;
+                }
+                renderList();
+                
+                // 稍微延时，防止浏览器拦截多文件下载
+                await new Promise(r => setTimeout(r, 100));
+            }
+            
+            convertBtn.disabled = false;
+            clearBtn.disabled = false;
+        });
+
+        clearBtn.addEventListener('click', () => {
+            filesQueue = [];
+            renderList();
+        });
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ================= NCM 解密核心逻辑 =================
+        function Uint8ArrayToWordArray(u8Arr) {
+            const words = [];
+            for (let i = 0; i < u8Arr.length; i++) {
+                words[i >>> 2] |= u8Arr[i] << (24 - (i & 3) * 8);
+            }
+            return CryptoJS.lib.WordArray.create(words, u8Arr.length);
+        }
+
+        function WordArrayToUint8Array(wordArray) {
+            const { words, sigBytes } = wordArray;
+            const u8 = new Uint8Array(sigBytes);
+            for (let i = 0; i < sigBytes; i++) {
+                u8[i] = (words[i >>> 2] >>> (24 - (i & 3) * 8)) & 0xff;
+            }
+            return u8;
+        }
+
+        // PKCS7 去除填充
+        function pkcs7Unpad(data) {
+            const padLength = data[data.length - 1];
+            if (padLength > 0 && padLength <= 16) {
+                let valid = true;
+                for(let i = 0; i < padLength; i++) {
+                    if (data[data.length - 1 - i] !== padLength) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) return data.slice(0, data.length - padLength);
+            }
+            return data;
+        }
+
+        async function decryptNCM(file) {
+            const buffer = await file.arrayBuffer();
+            const dv = new DataView(buffer);
+            let offset = 0;
+
+            // 1. 验证文件头
+            const header = new Uint8Array(buffer, 0, 8);
+            let headerStr = Array.from(header).map(b => b.toString(16).padStart(2, '0')).join('');
+            if (headerStr !== '4354454e4644414d') {
+                throw new Error("错误的文件头");
+            }
+            offset += 8;
+
+            // 2. 跳过2字节
+            offset += 2;
+
+            // 3. 读取 key 长度和数据
+            const key_length = dv.getUint32(offset, true);
+            offset += 4;
+            let key_data = new Uint8Array(buffer, offset, key_length);
+            offset += key_length;
+
+            // 4. 异或 0x64
+            for (let i = 0; i < key_data.length; i++) {
+                key_data[i] ^= 0x64;
+            }
+
+            // 5. AES-ECB 解密 core_key
+            const core_key = CryptoJS.enc.Hex.parse("687A4852416D736F356B496E62617857");
+            const decrypted_key = CryptoJS.AES.decrypt(
+                { ciphertext: Uint8ArrayToWordArray(key_data) },
+                core_key,
+                { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.NoPadding }
+            );
+            let key_bytes = WordArrayToUint8Array(decrypted_key);
+            
+            // 去除填充并跳过前17字节
+            key_bytes = pkcs7Unpad(key_bytes);
+            key_bytes = key_bytes.slice(17);
+
+            // 6. 生成 key_box (RC4-like)
+            const key_box = new Uint8Array(256);
+            for (let i = 0; i < 256; i++) key_box[i] = i;
+            
+            let c = 0, last_byte = 0, key_offset = 0;
+            for (let i = 0; i < 256; i++) {
+                const swap = key_box[i];
+                c = (swap + last_byte + key_bytes[key_offset]) & 0xFF;
+                key_offset++;
+                if (key_offset >= key_bytes.length) {
+                    key_offset = 0;
+                }
+                key_box[i] = key_box[c];
+                key_box[c] = swap;
+                last_byte = c;
+            }
+
+            // 7. 读取元数据长度与数据
+            const meta_length = dv.getUint32(offset, true);
+            offset += 4;
+            
+            let format = "mp3";
+            let musicName = file.name.replace(/\.ncm$/i, "");
+
+            if (meta_length > 0) {
+                let meta_data = new Uint8Array(buffer, offset, meta_length);
+                offset += meta_length;
+
+                // 8. 异或 0x63
+                for (let i = 0; i < meta_data.length; i++) {
+                    meta_data[i] ^= 0x63;
+                }
+
+                // 9. AES-ECB 解密 meta_key
+                let b64_str = new TextDecoder().decode(meta_data.slice(22));
+                const meta_key = CryptoJS.enc.Hex.parse("2331346C6A6B5F215C5D2630553C2728");
+                const decrypted_meta = CryptoJS.AES.decrypt(
+                    { ciphertext: CryptoJS.enc.Base64.parse(b64_str) },
+                    meta_key,
+                    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.NoPadding }
+                );
+                let meta_bytes = WordArrayToUint8Array(decrypted_meta);
+                meta_bytes = pkcs7Unpad(meta_bytes);
+                
+                let meta_json_str = new TextDecoder().decode(meta_bytes.slice(6));
+                let meta_json = JSON.parse(meta_json_str);
+                
+                // 提取格式和音乐名称
+                format = meta_json.format;
+                if (meta_json.musicName) {
+                    musicName = meta_json.musicName;
+                }
+            }
+
+            // 10. 跳过 CRC32(4字节) 和 5字节间隔
+            offset += 4;
+            offset += 5;
+
+            // 11. 读取并跳过图片数据 (Python 原版代码漏掉了跳过这步！)
+            if (offset + 4 <= buffer.byteLength) {
+                const image_size = dv.getUint32(offset, true);
+                offset += 4;
+                offset += image_size; // 跳过图片大小
+            }
+
+            // 12. 解密音频数据主体
+            const chunk_size = 0x8000;
+            const decrypted_chunks = [];
+            
+            while (offset < buffer.byteLength) {
+                const current_chunk_size = Math.min(chunk_size, buffer.byteLength - offset);
+                let chunk = new Uint8Array(buffer, offset, current_chunk_size);
+                let out_chunk = new Uint8Array(chunk.length);
+                
+                for (let i = 1; i <= chunk.length; i++) {
+                    let j = i & 0xFF;
+                    out_chunk[i - 1] = chunk[i - 1] ^ key_box[(key_box[j] + key_box[(key_box[j] + j) & 0xFF]) & 0xFF];
+                }
+                
+                decrypted_chunks.push(out_chunk);
+                offset += current_chunk_size;
+            }
+
+            // 合并 chunks
+            let total_length = 0;
+            for (let chunk of decrypted_chunks) {
+                total_length += chunk.length;
+            }
+            const result = new Uint8Array(total_length);
+            let pos = 0;
+            for (let chunk of decrypted_chunks) {
+                result.set(chunk, pos);
+                pos += chunk.length;
+            }
+
+            // 13. 生成下载文件
+            let mimeType = "audio/mpeg";
+            if (format === "flac") {
+                mimeType = "audio/flac";
+            }
+
+            const blob = new Blob([result], { type: mimeType });
+            const filename = `${musicName}.${format}`;
+            
+            return { blob: blob, filename: filename };
+        }
+    </script>
+</body>
+</html>
