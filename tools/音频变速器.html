@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎵 音频变速器 - 音调同步</title>
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js">
+    </script>
+    <style>
+        /* ===== CSS 变量 (主题) ===== */
+        :root {
+            --bg-primary: #f0f0f5;
+            --bg-secondary: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --text-primary: #1a1a2e;
+            --text-secondary: rgba(0, 0, 0, 0.75);
+            --text-muted: rgba(0, 0, 0, 0.4);
+            --accent: #7c3aed;
+            --accent-light: #8b5cf6;
+            --shadow: 0 30px 80px rgba(0, 0, 0, 0.15);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --input-bg: rgba(0, 0, 0, 0.05);
+            --progress-bg: rgba(0, 0, 0, 0.1);
+            --btn-hover: rgba(124, 58, 237, 0.1);
+            --btn-primary-bg: rgba(124, 58, 237, 0.15);
+            --btn-primary-hover: rgba(124, 58, 237, 0.25);
+            --positive: #16a34a;
+            --negative: #dc2626;
+            --transition: 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: rgba(30, 30, 50, 0.75);
+            --border-color: rgba(255, 255, 255, 0.06);
+            --text-primary: #e0e0e0;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-muted: rgba(255, 255, 255, 0.35);
+            --accent: #a78bfa;
+            --accent-light: #c4b5fd;
+            --shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+            --card-bg: rgba(30, 30, 50, 0.75);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --progress-bg: rgba(255, 255, 255, 0.08);
+            --btn-hover: rgba(167, 139, 250, 0.15);
+            --btn-primary-bg: rgba(167, 139, 250, 0.25);
+            --btn-primary-hover: rgba(167, 139, 250, 0.4);
+            --positive: #6ee7b7;
+            --negative: #fca5a5;
+        }
+
+        /* ===== 全局重置 ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background var(--transition), color var(--transition);
+        }
+
+        .container {
+            max-width: 720px;
+            width: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 35px 30px 40px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: background var(--transition), border var(--transition), box-shadow var(--transition);
+            position: relative;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: none;
+            border: none;
+            font-size: 26px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+            padding: 6px;
+            border-radius: 50%;
+            background: var(--input-bg);
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: var(--btn-hover);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+            margin-right: 50px;
+        }
+        .header .logo {
+            font-size: 32px;
+            line-height: 1;
+        }
+        .header .title-group h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--accent-light), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .title-group .sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            margin-top: 2px;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(167, 139, 250, 0.35);
+            border-radius: 24px;
+            padding: 38px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.02);
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .upload-area:hover {
+            border-color: rgba(167, 139, 250, 0.7);
+            background: rgba(167, 139, 250, 0.05);
+        }
+        .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(167, 139, 250, 0.12);
+            transform: scale(1.01);
+        }
+        .upload-area .icon {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 12px;
+            opacity: 0.7;
+        }
+        .upload-area .text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .upload-area .hint {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .upload-area input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 14px;
+            background: var(--input-bg);
+            border-radius: 16px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .file-info.show {
+            display: flex;
+        }
+        .file-info .name {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-secondary);
+        }
+        .file-info .badge {
+            font-size: 12px;
+            padding: 3px 12px;
+            border-radius: 20px;
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--accent-light);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .file-info .remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0 6px;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .file-info .remove-btn:hover {
+            color: var(--negative);
+        }
+
+        /* ===== 播放控制 ===== */
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+        .playback-controls .btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 4px 6px;
+            transition: all 0.2s;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--input-bg);
+            flex-shrink: 0;
+        }
+        .playback-controls .btn:hover {
+            color: var(--text-primary);
+            background: var(--btn-hover);
+        }
+        .playback-controls .btn:active {
+            transform: scale(0.92);
+        }
+        .playback-controls .btn.primary {
+            background: var(--btn-primary-bg);
+            color: var(--accent-light);
+            font-size: 32px;
+        }
+        .playback-controls .btn.primary:hover {
+            background: var(--btn-primary-hover);
+            color: var(--text-primary);
+        }
+        .playback-controls .btn:disabled {
+            opacity: 0.25;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-section {
+            margin-bottom: 22px;
+        }
+        .progress-track {
+            position: relative;
+            width: 100%;
+            height: 6px;
+            background: var(--progress-bg);
+            border-radius: 4px;
+            cursor: pointer;
+            overflow: visible;
+        }
+        .progress-track .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #818cf8, var(--accent));
+            border-radius: 4px;
+            transition: width 0.05s linear;
+            position: relative;
+        }
+        .progress-track .progress-fill::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 16px rgba(167, 139, 250, 0.6);
+            opacity: 0;
+            transition: opacity 0.25s;
+        }
+        .progress-track:hover .progress-fill::after {
+            opacity: 1;
+        }
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .speed-section {
+            background: var(--input-bg);
+            border-radius: 20px;
+            padding: 18px 20px 20px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 6px;
+            transition: background var(--transition);
+        }
+        .speed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .speed-header .label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .speed-header .value-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .speed-header .speed-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.5px;
+            min-width: 60px;
+            text-align: right;
+        }
+        .speed-header .speed-unit {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .speed-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 6px;
+        }
+        .speed-buttons .speed-btn {
+            padding: 4px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 48px;
+        }
+        .speed-buttons .speed-btn:hover {
+            background: var(--btn-hover);
+            color: var(--text-primary);
+            border-color: var(--accent);
+        }
+        .speed-buttons .speed-btn.active {
+            background: var(--btn-primary-bg);
+            border-color: var(--accent);
+            color: var(--accent-light);
+            box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
+        }
+
+        .speed-slider-wrap {
+            position: relative;
+            padding: 0 2px;
+            margin-top: 12px;
+        }
+        .speed-slider-wrap input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, rgba(167, 139, 250, 0.2), rgba(167, 139, 250, 0.5));
+            outline: none;
+            transition: background 0.2s;
+        }
+        .speed-slider-wrap input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--accent-light), var(--accent));
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+            transition: transform 0.15s;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+        .speed-slider-wrap input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.12);
+        }
+        .speed-slider-wrap input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--accent-light), var(--accent));
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            padding: 0 2px;
+            margin-top: 6px;
+            height: 20px;
+        }
+        .slider-labels .label-item {
+            font-size: 12px;
+            color: var(--text-muted);
+            position: absolute;
+            transform: translateX(-50%);
+        }
+        .slider-labels .label-item:first-child { left: 0%; transform: translateX(0%); }
+        .slider-labels .label-item:last-child { left: 100%; transform: translateX(-100%); }
+        .slider-labels .label-item.mid { left: 20%; }
+        .slider-labels .label-item.extra { left: 46.67%; }
+
+        .pitch-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border-color);
+        }
+        .pitch-info .item {
+            text-align: center;
+        }
+        .pitch-info .item .num {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+        .pitch-info .item .num.positive {
+            color: var(--positive);
+        }
+        .pitch-info .item .num.negative {
+            color: var(--negative);
+        }
+        .pitch-info .item .desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .footer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .footer-actions .btn-sm {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            background: var(--input-bg);
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .footer-actions .btn-sm:hover {
+            background: var(--btn-hover);
+            color: var(--text-primary);
+            border-color: var(--accent);
+        }
+        .footer-actions .btn-sm.primary {
+            background: var(--btn-primary-bg);
+            color: var(--accent-light);
+            border-color: rgba(167, 139, 250, 0.2);
+        }
+        .footer-actions .btn-sm.primary:hover {
+            background: var(--btn-primary-hover);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(167, 139, 250, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(167, 139, 250, 0.4); }
+        }
+        .playing .btn.primary {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 540px) {
+            .container { padding: 24px 18px 28px; border-radius: 28px; }
+            .header .title-group h1 { font-size: 18px; }
+            .header .logo { font-size: 26px; }
+            .upload-area { padding: 28px 16px; }
+            .upload-area .icon { font-size: 36px; }
+            .playback-controls .btn { width: 40px; height: 40px; font-size: 22px; }
+            .playback-controls .btn.primary { font-size: 26px; }
+            .speed-header .speed-value { font-size: 22px; min-width: 50px; }
+            .pitch-info { gap: 16px; flex-wrap: wrap; }
+            .pitch-info .item .num { font-size: 17px; }
+            .footer-actions { justify-content: center; }
+            .theme-toggle { top: 16px; right: 16px; width: 38px; height: 38px; font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="app">
+    <button class="theme-toggle" id="themeToggle" title="切换白天/夜间模式">☀️</button>
+
+    <div class="header">
+        <span class="logo">🎵</span>
+        <div class="title-group">
+            <h1>音频变速器</h1>
+            <div class="sub">速度变化 · 音调同步</div>
+        </div>
+    </div>
+
+    <div class="upload-area" id="uploadArea">
+        <span class="icon">📁</span>
+        <div class="text">拖拽或点击上传音频</div>
+        <div class="hint">支持 MP3 · WAV · M4A · FLAC · OGG 等</div>
+        <input type="file" id="fileInput" accept="audio/*" />
+    </div>
+
+    <div class="file-info" id="fileInfo">
+        <span class="name" id="fileName">unknown.mp3</span>
+        <span class="badge" id="fileDuration">00:00</span>
+        <button class="remove-btn" id="removeFileBtn" title="移除文件">✕</button>
+    </div>
+
+    <div class="playback-controls" id="controls">
+        <button class="btn" id="rewindBtn" title="回到开头">⏮</button>
+        <button class="btn primary" id="playBtn" disabled title="播放 / 暂停">▶</button>
+        <button class="btn" id="forwardBtn" title="快进 5 秒">⏭</button>
+    </div>
+
+    <div class="progress-section">
+        <div class="progress-track" id="progressTrack">
+            <div class="progress-fill" id="progressFill" style="width:0%;"></div>
+        </div>
+        <div class="progress-time">
+            <span id="currentTimeDisplay">00:00</span>
+            <span id="totalTimeDisplay">00:00</span>
+        </div>
+    </div>
+
+    <div class="speed-section">
+        <div class="speed-header">
+            <span class="label">⏱ 播放速度</span>
+            <div class="value-group">
+                <span class="speed-value" id="speedDisplay">1.00</span>
+                <span class="speed-unit">×</span>
+            </div>
+        </div>
+
+        <div class="speed-buttons" id="speedButtons">
+            <button class="speed-btn" data-speed="0.5">0.5×</button>
+            <button class="speed-btn" data-speed="0.75">0.75×</button>
+            <button class="speed-btn active" data-speed="1.0">1.0×</button>
+            <button class="speed-btn" data-speed="1.25">1.25×</button>
+            <button class="speed-btn" data-speed="1.5">1.5×</button>
+            <button class="speed-btn" data-speed="2.0">2.0×</button>
+            <button class="speed-btn" data-speed="3.0">3.0×</button>
+            <button class="speed-btn" data-speed="4.0">4.0×</button>
+        </div>
+
+        <div class="speed-slider-wrap">
+            <input type="range" id="speedSlider" min="0.25" max="4.0" step="0.01" value="1.0" />
+            <div class="slider-labels">
+                <span class="label-item">0.25×</span>
+                <span class="label-item mid">1.00×</span>
+                <span class="label-item extra">2.00×</span>
+                <span class="label-item">4.00×</span>
+            </div>
+        </div>
+
+        <div class="pitch-info">
+            <div class="item">
+                <div class="num" id="pitchSemitones">±0</div>
+                <div class="desc">音调变化 (半音)</div>
+            </div>
+            <div class="item">
+                <div class="num" id="pitchPercent">±0%</div>
+                <div class="desc">频率变化</div>
+            </div>
+            <div class="item">
+                <div class="num" id="pitchRatio">1.00×</div>
+                <div class="desc">音调倍率</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-actions">
+        <button class="btn-sm" id="resetBtn">↺ 重置</button>
+        <button class="btn-sm primary" id="exportBtn">⬇ 导出 MP3</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        'use strict';
+
+        // ===== DOM 引用 =====
+        const $ = (sel) => document.querySelector(sel);
+        const fileInput = $('#fileInput');
+        const uploadArea = $('#uploadArea');
+        const fileInfo = $('#fileInfo');
+        const fileName = $('#fileName');
+        const fileDuration = $('#fileDuration');
+        const removeFileBtn = $('#removeFileBtn');
+        const playBtn = $('#playBtn');
+        const rewindBtn = $('#rewindBtn');
+        const forwardBtn = $('#forwardBtn');
+        const progressTrack = $('#progressTrack');
+        const progressFill = $('#progressFill');
+        const currentTimeDisplay = $('#currentTimeDisplay');
+        const totalTimeDisplay = $('#totalTimeDisplay');
+        const speedSlider = $('#speedSlider');
+        const speedDisplay = $('#speedDisplay');
+        const speedButtons = $('#speedButtons');
+        const pitchSemitones = $('#pitchSemitones');
+        const pitchPercent = $('#pitchPercent');
+        const pitchRatio = $('#pitchRatio');
+        const resetBtn = $('#resetBtn');
+        const exportBtn = $('#exportBtn');
+        const themeToggle = $('#themeToggle');
+        const container = $('#app');
+
+        // ===== 状态 =====
+        const state = {
+            audioBuffer: null,
+            sourceNode: null,
+            context: null,
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            playbackRate: 1.0,
+            isLoaded: false,
+            pauseOffset: 0,
+            lastStartTime: 0,
+            originalFileName: 'audio',
+            isDragging: false,
+            dragTargetTime: 0,
+            wasPlayingBeforeDrag: false,
+        };
+
+        // ===== 工具 =====
+        function formatTime(seconds) {
+            if (!isFinite(seconds) || seconds < 0) return '00:00';
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+        function ratioToSemitones(ratio) { return 12 * Math.log2(ratio); }
+
+        function ratioToPercent(ratio) { return (ratio - 1) * 100; }
+
+        // ===== AudioContext =====
+        function getContext() {
+            if (!state.context) {
+                state.context = new(window.AudioContext || window.webkitAudioContext)();
+            }
+            if (state.context.state === 'suspended') {
+                state.context.resume();
+            }
+            return state.context;
+        }
+
+        // ===== 核心播放控制 =====
+        function stopAudio() {
+            if (state.sourceNode) {
+                try {
+                    state.sourceNode.stop();
+                } catch (_) {}
+                state.sourceNode.onended = null;
+                state.sourceNode = null;
+            }
+            state.isPlaying = false;
+            container.classList.remove('playing');
+            playBtn.textContent = '▶';
+        }
+
+        function playAudio() {
+            if (!state.isLoaded || !state.audioBuffer) return;
+
+            stopAudio();
+
+            const ctx = getContext();
+            if (ctx.state === 'suspended') ctx.resume();
+
+            let offset = state.pauseOffset;
+            if (offset >= state.duration) {
+                offset = 0;
+                state.pauseOffset = 0;
+                state.currentTime = 0;
+            }
+
+            const source = ctx.createBufferSource();
+            source.buffer = state.audioBuffer;
+            source.playbackRate.value = state.playbackRate;
+
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = 0.9;
+            source.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            state.sourceNode = source;
+            state.isPlaying = true;
+            state.lastStartTime = ctx.currentTime;
+            state.currentTime = offset;
+
+            source.start(0, offset);
+
+            source.onended = () => {
+                if (state.sourceNode === source && state.isPlaying) {
+                    state.isPlaying = false;
+                    state.pauseOffset = state.duration;
+                    state.currentTime = state.duration;
+                    state.sourceNode = null;
+                    updateProgressUI();
+                    updatePlayButton();
+                }
+            };
+
+            playBtn.textContent = '⏸';
+            container.classList.add('playing');
+            updateProgressLoop();
+        }
+
+        function pauseAudio() {
+            if (!state.isPlaying || !state.sourceNode) return;
+            const ctx = getContext();
+            const elapsed = (ctx.currentTime - state.lastStartTime) * state.playbackRate;
+            state.pauseOffset = state.currentTime + elapsed;
+            if (state.pauseOffset >= state.duration) state.pauseOffset = state.duration;
+            state.currentTime = state.pauseOffset;
+
+            stopAudio();
+            updateProgressUI();
+        }
+
+        function togglePlay() {
+            if (!state.isLoaded) return;
+            if (state.isPlaying) {
+                pauseAudio();
+            } else {
+                if (state.pauseOffset >= state.duration) {
+                    state.pauseOffset = 0;
+                    state.currentTime = 0;
+                }
+                playAudio();
+            }
+        }
+
+        function seekTo(time, resumeAfter = false) {
+            if (!state.isLoaded || !state.audioBuffer) return;
+            time = clamp(time, 0, state.duration);
+
+            stopAudio();
+
+            state.pauseOffset = time;
+            state.currentTime = time;
+            updateProgressUI();
+            currentTimeDisplay.textContent = formatTime(time);
+            progressFill.style.width = (state.duration > 0 ? (time / state.duration * 100) : 0) + '%';
+
+            if (resumeAfter) {
+                playAudio();
+            }
+        }
+
+        // ===== 进度更新循环 =====
+        let progressRAF = null;
+
+        function updateProgressLoop() {
+            if (progressRAF) cancelAnimationFrame(progressRAF);
+
+            function tick() {
+                if (!state.isPlaying || !state.sourceNode) {
+                    updateProgressUI();
+                    return;
+                }
+                updateProgressUI();
+                progressRAF = requestAnimationFrame(tick);
+            }
+            tick();
+        }
+
+        function updateProgressUI() {
+            const ctx = state.context;
+            let current = state.currentTime;
+            if (state.isPlaying && state.sourceNode && ctx) {
+                const elapsed = (ctx.currentTime - state.lastStartTime) * state.playbackRate;
+                current = state.pauseOffset + elapsed;
+                if (current > state.duration) current = state.duration;
+                state.currentTime = current;
+            } else {
+                current = state.pauseOffset;
+            }
+            if (!isFinite(current) || current < 0) current = 0;
+            if (current > state.duration) current = state.duration;
+
+            const pct = state.duration > 0 ? (current / state.duration * 100) : 0;
+            progressFill.style.width = clamp(pct, 0, 100) + '%';
+            currentTimeDisplay.textContent = formatTime(current);
+        }
+
+        function updatePlayButton() {
+            if (state.isPlaying) {
+                playBtn.textContent = '⏸';
+                container.classList.add('playing');
+            } else {
+                playBtn.textContent = '▶';
+                container.classList.remove('playing');
+            }
+        }
+
+        // ===== 加载音频 =====
+        async function loadAudioFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const ctx = getContext();
+                const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+                state.audioBuffer = audioBuffer;
+                state.duration = audioBuffer.duration;
+                state.currentTime = 0;
+                state.pauseOffset = 0;
+                state.isLoaded = true;
+                state.isPlaying = false;
+                state.playbackRate = 1.0;
+                const dotIdx = file.name.lastIndexOf('.');
+                state.originalFileName = dotIdx > 0 ? file.name.substring(0, dotIdx) : file.name;
+
+                fileName.textContent = file.name;
+                fileDuration.textContent = formatTime(state.duration);
+                totalTimeDisplay.textContent = formatTime(state.duration);
+                currentTimeDisplay.textContent = '00:00';
+                progressFill.style.width = '0%';
+                fileInfo.classList.add('show');
+                playBtn.disabled = false;
+
+                setSpeed(1.0);
+
+                // 自动播放
+                playAudio();
+
+            } catch (err) {
+                console.error('加载音频失败:', err);
+                alert('⚠️ 无法解码该音频文件，请尝试其他格式。');
+            }
+        }
+
+        // ===== 速度控制 =====
+        function setSpeed(val) {
+            val = clamp(parseFloat(val) || 1.0, 0.25, 4.0);
+            state.playbackRate = val;
+            speedSlider.value = val;
+            speedDisplay.textContent = val.toFixed(2);
+            highlightSpeedButton(val);
+            updatePitchDisplay();
+
+            if (state.isPlaying && state.sourceNode) {
+                state.sourceNode.playbackRate.value = val;
+                const ctx = state.context;
+                if (ctx) {
+                    const elapsed = (ctx.currentTime - state.lastStartTime) * state.playbackRate;
+                    state.currentTime = state.pauseOffset + elapsed;
+                    updateProgressUI();
+                }
+            } else {
+                updateProgressUI();
+            }
+        }
+
+        function updatePitchDisplay() {
+            const ratio = state.playbackRate;
+            const semitones = ratioToSemitones(ratio);
+            const percent = ratioToPercent(ratio);
+            pitchSemitones.textContent = (semitones >= 0 ? '+' : '') + semitones.toFixed(1);
+            pitchSemitones.className = 'num' + (semitones > 0.05 ? ' positive' : semitones < -0.05 ? ' negative' : '');
+            pitchPercent.textContent = (percent >= 0 ? '+' : '') + percent.toFixed(1) + '%';
+            pitchPercent.className = 'num' + (percent > 0.5 ? ' positive' : percent < -0.5 ? ' negative' : '');
+            pitchRatio.textContent = ratio.toFixed(3) + '×';
+        }
+
+        function highlightSpeedButton(rate) {
+            const btns = speedButtons.querySelectorAll('.speed-btn');
+            btns.forEach(btn => {
+                const val = parseFloat(btn.dataset.speed);
+                btn.classList.toggle('active', Math.abs(val - rate) < 0.001);
+            });
+        }
+
+        // ===== 导出 MP3 =====
+        async function exportMP3() {
+            if (!state.isLoaded || !state.audioBuffer) {
+                alert('请先加载一个音频文件。');
+                return;
+            }
+
+            const rate = state.playbackRate;
+            if (rate === 1.0) {
+                alert('当前速度为 1.00×，直接下载原音频即可。');
+                return;
+            }
+
+            try {
+                exportBtn.textContent = '⏳ 导出中...';
+                exportBtn.disabled = true;
+
+                const originalBuffer = state.audioBuffer;
+                const sampleRate = originalBuffer.sampleRate;
+                const channels = originalBuffer.numberOfChannels;
+                const length = originalBuffer.length;
+
+                const newLength = Math.floor(length / rate);
+                const newDuration = newLength / sampleRate;
+
+                const offlineCtx = new OfflineAudioContext(channels, newLength, sampleRate);
+                const source = offlineCtx.createBufferSource();
+                source.buffer = originalBuffer;
+                source.playbackRate.value = rate;
+
+                const gain = offlineCtx.createGain();
+                gain.gain.value = 0.9;
+                source.connect(gain);
+                gain.connect(offlineCtx.destination);
+                source.start(0);
+                source.stop(newDuration);
+
+                const renderedBuffer = await offlineCtx.startRendering();
+
+                const mp3Blob = await encodeMP3(renderedBuffer);
+                const url = URL.createObjectURL(mp3Blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                const speedStr = rate.toFixed(2).replace('.', '_');
+                a.download = `${state.originalFileName}_${speedStr}倍速.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+                setSpeed(1.0);
+                alert('✅ MP3 导出成功！速度已重置为 1.00×。');
+
+            } catch (err) {
+                console.error('导出失败:', err);
+                alert('❌ 导出失败: ' + err.message);
+            } finally {
+                exportBtn.textContent = '⬇ 导出 MP3';
+                exportBtn.disabled = false;
+            }
+        }
+
+        function encodeMP3(buffer) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const channels = buffer.numberOfChannels;
+                    const sampleRate = buffer.sampleRate;
+                    const length = buffer.length;
+                    const left = buffer.getChannelData(0);
+                    const right = channels > 1 ? buffer.getChannelData(1) : left;
+
+                    const pcmData = new Int16Array(length * channels);
+                    for (let i = 0; i < length; i++) {
+                        const l = clamp(Math.round(left[i] * 0x7FFF), -0x8000, 0x7FFF);
+                        const r = clamp(Math.round(right[i] * 0x7FFF), -0x8000, 0x7FFF);
+                        if (channels === 1) {
+                            pcmData[i] = l;
+                        } else {
+                            pcmData[i * 2] = l;
+                            pcmData[i * 2 + 1] = r;
+                        }
+                    }
+
+                    const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+                    const mp3Data = [];
+                    const blockSize = 576;
+                    for (let i = 0; i < pcmData.length; i += blockSize * channels) {
+                        const chunk = pcmData.subarray(i, i + blockSize * channels);
+                        let mp3buf;
+                        if (channels === 1) {
+                            mp3buf = mp3encoder.encodeBuffer(chunk);
+                        } else {
+                            const leftChunk = new Int16Array(chunk.length / 2);
+                            const rightChunk = new Int16Array(chunk.length / 2);
+                            for (let j = 0; j < chunk.length / 2; j++) {
+                                leftChunk[j] = chunk[j * 2];
+                                rightChunk[j] = chunk[j * 2 + 1];
+                            }
+                            mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+                        }
+                        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+                    }
+                    const finalBuf = mp3encoder.flush();
+                    if (finalBuf.length > 0) mp3Data.push(finalBuf);
+
+                    const totalLen = mp3Data.reduce((acc, buf) => acc + buf.length, 0);
+                    const merged = new Uint8Array(totalLen);
+                    let offset = 0;
+                    for (const buf of mp3Data) {
+                        merged.set(new Uint8Array(buf), offset);
+                        offset += buf.length;
+                    }
+                    resolve(new Blob([merged], { type: 'audio/mpeg' }));
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        }
+
+        // ===== 重置 =====
+        function resetAll() {
+            stopAudio();
+            state.audioBuffer = null;
+            state.isLoaded = false;
+            state.duration = 0;
+            state.currentTime = 0;
+            state.pauseOffset = 0;
+
+            fileInfo.classList.remove('show');
+            playBtn.disabled = true;
+            progressFill.style.width = '0%';
+            currentTimeDisplay.textContent = '00:00';
+            totalTimeDisplay.textContent = '00:00';
+            setSpeed(1.0);
+            fileInput.value = '';
+        }
+
+        // ===== 主题切换 =====
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            themeToggle.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // ===== 事件绑定 =====
+
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        themeToggle.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+        themeToggle.addEventListener('click', toggleTheme);
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadAudioFile(file);
+        });
+
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault();
+            uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('audio/')) {
+                loadAudioFile(file);
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                fileInput.files = dt.files;
+            } else {
+                alert('请拖入音频文件。');
+            }
+        });
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target.tagName !== 'INPUT') fileInput.click();
+        });
+
+        removeFileBtn.addEventListener('click', resetAll);
+
+        playBtn.addEventListener('click', togglePlay);
+        rewindBtn.addEventListener('click', () => {
+            if (state.isLoaded) {
+                const wasPlaying = state.isPlaying;
+                if (wasPlaying) pauseAudio();
+                seekTo(0, wasPlaying);
+            }
+        });
+        forwardBtn.addEventListener('click', () => {
+            if (!state.isLoaded) return;
+            const wasPlaying = state.isPlaying;
+            if (wasPlaying) pauseAudio();
+            const target = Math.min(state.pauseOffset + 5, state.duration);
+            seekTo(target, wasPlaying);
+        });
+
+        // 进度条拖动
+        let isDraggingProgress = false;
+        let dragStartTime = 0;
+        let wasPlayingOnDragStart = false;
+
+        progressTrack.addEventListener('mousedown', (e) => {
+            if (!state.isLoaded) return;
+            isDraggingProgress = true;
+            wasPlayingOnDragStart = state.isPlaying;
+            if (state.isPlaying) pauseAudio();
+            handleProgressMove(e);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingProgress && state.isLoaded) {
+                handleProgressMove(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingProgress && state.isLoaded) {
+                const target = clamp(dragStartTime, 0, state.duration);
+                seekTo(target, wasPlayingOnDragStart);
+                isDraggingProgress = false;
+            }
+        });
+
+        progressTrack.addEventListener('touchstart', (e) => {
+            if (!state.isLoaded) return;
+            isDraggingProgress = true;
+            wasPlayingOnDragStart = state.isPlaying;
+            if (state.isPlaying) pauseAudio();
+            handleProgressMove(e.touches[0]);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (isDraggingProgress && state.isLoaded) {
+                handleProgressMove(e.touches[0]);
+            }
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+            if (isDraggingProgress && state.isLoaded) {
+                const target = clamp(dragStartTime, 0, state.duration);
+                seekTo(target, wasPlayingOnDragStart);
+                isDraggingProgress = false;
+            }
+        }, { passive: true });
+
+        function handleProgressMove(e) {
+            const rect = progressTrack.getBoundingClientRect();
+            const x = clamp((e.clientX - rect.left) / rect.width, 0, 1);
+            const time = x * state.duration;
+            dragStartTime = time;
+            currentTimeDisplay.textContent = formatTime(time);
+            progressFill.style.width = (state.duration > 0 ? (time / state.duration * 100) : 0) + '%';
+        }
+
+        // 速度控制
+        speedSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            setSpeed(val);
+        });
+
+        speedButtons.addEventListener('click', (e) => {
+            const btn = e.target.closest('.speed-btn');
+            if (!btn) return;
+            const speed = parseFloat(btn.dataset.speed);
+            if (!isNaN(speed)) setSpeed(speed);
+        });
+
+        resetBtn.addEventListener('click', resetAll);
+        exportBtn.addEventListener('click', exportMP3);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === ' ' || e.key === 'Space') {
+                e.preventDefault();
+                togglePlay();
+            }
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (state.isLoaded) {
+                    const wasPlaying = state.isPlaying;
+                    if (wasPlaying) pauseAudio();
+                    const target = Math.min(state.pauseOffset + 5, state.duration);
+                    seekTo(target, wasPlaying);
+                }
+            }
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (state.isLoaded) {
+                    const wasPlaying = state.isPlaying;
+                    if (wasPlaying) pauseAudio();
+                    const target = Math.max(state.pauseOffset - 5, 0);
+                    seekTo(target, wasPlaying);
+                }
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    resetAll();
+                }
+            }
+        });
+
+        // ===== 初始化 =====
+        playBtn.disabled = true;
+        setSpeed(1.0);
+        console.log('🎵 音频变速工具已加载 (精简版)');
+        console.log('快捷键: 空格=播放/暂停, ←/→=快退/快进5秒, R=重置');
+
+    })();
+</script>
+</body>
+</html>
